@@ -11,11 +11,16 @@ import {
   ClipboardList,
   Users,
   Download,
+  Upload,
   Megaphone,
   Newspaper,
   ChevronDown,
   ChevronRight,
   Info,
+  Warehouse,
+  MapPin,
+  ShieldCheck,
+  FileSpreadsheet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -58,7 +63,30 @@ const menuItems: MenuItem[] = [
       { label: "Categorias", icon: Tags, path: "/stock/categorias" },
       { label: "Pedidos", icon: ClipboardList, path: "/stock/pedidos" },
       { label: "Utilizadores", icon: Users, path: "/stock/utilizadores" },
-      { label: "Exportar", icon: Download, path: "/stock/exportar" },
+    ],
+  },
+  {
+    label: "Armazém",
+    icon: Warehouse,
+    children: [
+      { label: "Armazéns", icon: Warehouse, path: "/armazem" },
+      { label: "Localizações", icon: MapPin, path: "/armazem/localizacoes" },
+    ],
+  },
+  {
+    label: "Importar / Exportar",
+    icon: FileSpreadsheet,
+    children: [
+      { label: "Importar", icon: Upload, path: "/import-export" },
+      { label: "Exportar", icon: Download, path: "/import-export" },
+    ],
+  },
+  {
+    label: "Administração",
+    icon: ShieldCheck,
+    children: [
+      { label: "Permissões", icon: ShieldCheck, path: "/admin/permissoes" },
+      { label: "Utilizadores", icon: Users, path: "/stock/utilizadores" },
     ],
   },
   {
@@ -132,7 +160,7 @@ export function ERPSidebar() {
                 {groupOpen && item.children && (
                   <ul className="mt-0.5 ml-4 pl-4 border-l border-sidebar-border space-y-0.5 animate-fade-in">
                     {item.children.map((child) => (
-                      <li key={child.path}>
+                      <li key={child.path + child.label}>
                         <Link
                           to={child.path}
                           className={cn(

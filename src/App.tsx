@@ -6,6 +6,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ERPLayout } from "@/components/ERPLayout";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
+import Produtos from "./pages/Produtos";
+import NovoPedido from "./pages/NovoPedido";
+import Armazem from "./pages/Armazem";
+import Permissoes from "./pages/Permissoes";
+import ImportExport from "./pages/ImportExport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,15 +35,18 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/stock/dashboard" element={<ERPLayout><Dashboard /></ERPLayout>} />
-          <Route path="/produtos" element={<ERPPage title="Produtos" />} />
+          <Route path="/produtos" element={<ERPLayout><Produtos /></ERPLayout>} />
           <Route path="/produtos/categorias" element={<ERPPage title="Categorias de Produtos" />} />
           <Route path="/servicos" element={<ERPPage title="Serviços" />} />
           <Route path="/projetos" element={<ERPPage title="Projetos Financiados" />} />
-          <Route path="/stock/novo-pedido" element={<ERPPage title="Novo Pedido" />} />
+          <Route path="/stock/novo-pedido" element={<ERPLayout><NovoPedido /></ERPLayout>} />
           <Route path="/stock/categorias" element={<ERPPage title="Categorias de Stock" />} />
           <Route path="/stock/pedidos" element={<ERPPage title="Pedidos de Stock" />} />
           <Route path="/stock/utilizadores" element={<ERPPage title="Utilizadores" />} />
-          <Route path="/stock/exportar" element={<ERPPage title="Exportar Dados" />} />
+          <Route path="/armazem" element={<ERPLayout><Armazem /></ERPLayout>} />
+          <Route path="/armazem/localizacoes" element={<ERPPage title="Localizações" />} />
+          <Route path="/admin/permissoes" element={<ERPLayout><Permissoes /></ERPLayout>} />
+          <Route path="/import-export" element={<ERPLayout><ImportExport /></ERPLayout>} />
           <Route path="/comunicacao/pedidos" element={<ERPPage title="Pedidos de Comunicação" />} />
           <Route path="/comunicacao/noticias" element={<ERPPage title="Notícias" />} />
           <Route path="*" element={<NotFound />} />
