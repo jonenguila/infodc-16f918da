@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Package,
   Wrench,
@@ -21,8 +21,12 @@ import {
   MapPin,
   ShieldCheck,
   FileSpreadsheet,
+  LogOut,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface MenuItem {
   label: string;
@@ -101,6 +105,8 @@ const menuItems: MenuItem[] = [
 
 export function ERPSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [openGroups, setOpenGroups] = useState<string[]>(["Stock"]);
 
   const toggleGroup = (label: string) => {
@@ -182,6 +188,30 @@ export function ERPSidebar() {
           })}
         </ul>
       </nav>
+
+      {/* User footer */}
+      {user && (
+        <div className="border-t border-sidebar-border px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">
+                {user.nome.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">{user.nome}</p>
+              <p className="text-xs text-sidebar-muted truncate">{user.cargo || user.perfil}</p>
+            </div>
+            <button
+              onClick={() => { logout(); navigate("/login"); }}
+              className="text-sidebar-muted hover:text-destructive transition-colors"
+              title="Sair"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
