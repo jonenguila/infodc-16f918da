@@ -27,11 +27,26 @@ interface StoredUser extends UserProfile {
   password: string;
 }
 
+const DEFAULT_ADMIN: StoredUser = {
+  id: "admin-default",
+  nome: "Administrador",
+  email: "admin",
+  cargo: "Administrador do Sistema",
+  perfil: "Administrador",
+  password: "admin",
+};
+
 function getStoredUsers(): StoredUser[] {
   try {
-    return JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
+    const users: StoredUser[] = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
+    if (!users.some((u) => u.id === DEFAULT_ADMIN.id)) {
+      users.unshift(DEFAULT_ADMIN);
+      saveStoredUsers(users);
+    }
+    return users;
   } catch {
-    return [];
+    saveStoredUsers([DEFAULT_ADMIN]);
+    return [DEFAULT_ADMIN];
   }
 }
 
