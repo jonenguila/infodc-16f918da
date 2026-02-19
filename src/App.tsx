@@ -77,6 +77,7 @@ const AppRoutes = () => {
   );
 };
 
+// App root component
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
