@@ -17,6 +17,7 @@ import Permissoes from "./pages/Permissoes";
 import ImportExport from "./pages/ImportExport";
 import GestaoUtilizadores from "./pages/GestaoUtilizadores";
 import Comunicacao from "./pages/Comunicacao";
+import StockDelegacoes from "./pages/StockDelegacoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -67,7 +68,7 @@ const AppRoutes = () => {
       <Route path="/stock/produtos" element={<ERPPage title="Lista de Produtos (Stock)" />} />
       <Route path="/stock/categorias" element={<ERPPage title="Categorias de Stock" />} />
       <Route path="/stock/pedidos" element={<ERPPage title="Pedidos de Stock" />} />
-      <Route path="/stock/delegacoes" element={<ERPPage title="Delegações" />} />
+      <Route path="/stock/delegacoes" element={<ProtectedRoute><ERPLayout><StockDelegacoes /></ERPLayout></ProtectedRoute>} />
       <Route path="/armazem" element={<ProtectedRoute><ERPLayout><Armazem /></ERPLayout></ProtectedRoute>} />
       <Route path="/armazem/localizacoes" element={<ERPPage title="Localizações" />} />
       <Route path="/admin/permissoes" element={<ProtectedRoute><ERPLayout><Permissoes /></ERPLayout></ProtectedRoute>} />

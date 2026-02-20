@@ -17,7 +17,7 @@ const routePermissions: Record<Perfil, string[]> = {
 
 const sidebarPermissions: Record<Perfil, string[]> = {
   Administrador: ["*"],
-  Gestor: ["Dashboard", "Produtos", "Serviços", "Projetos Financiados", "Stock", "Armazém", "Importar / Exportar", "Comunicação"],
+  Gestor: ["Dashboard", "Produtos", "Serviços", "Projetos Financiados", "Stock", "Comunicação"],
   Utilizador: ["Dashboard", "Produtos", "Serviços", "Projetos Financiados", "Stock", "Comunicação"],
 };
 
