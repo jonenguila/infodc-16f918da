@@ -4,12 +4,12 @@ const routePermissions: Record<Perfil, string[]> = {
   Administrador: ["*"],
   Gestor: [
     "/", "/produtos", "/servicos", "/projetos",
-    "/stock/novo-pedido", "/stock/delegacoes", "/stock/exportar",
+    "/stock/novo-pedido", "/stock/delegacoes", "/stock/exportar", "/stock/armazem", "/stock/importar-exportar",
     "/comunicacao/pedidos", "/comunicacao/newsletter", "/comunicacao/links",
   ],
   Utilizador: [
     "/", "/produtos", "/servicos", "/projetos",
-    "/stock/novo-pedido", "/stock/delegacoes",
+    "/stock/novo-pedido", "/stock/delegacoes", "/stock/armazem", "/stock/importar-exportar",
     "/comunicacao/pedidos", "/comunicacao/newsletter", "/comunicacao/links",
   ],
 };

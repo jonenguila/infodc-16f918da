@@ -19,6 +19,8 @@ import Newsletter from "./pages/Newsletter";
 import OutrosLinks from "./pages/OutrosLinks";
 import StockDelegacoes from "./pages/StockDelegacoes";
 import ExportarStock from "./pages/ExportarStock";
+import Armazem from "./pages/Armazem";
+import ImportExport from "./pages/ImportExport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,6 +61,8 @@ const AppRoutes = () => {
       <Route path="/stock/novo-pedido" element={<P><NovoPedido /></P>} />
       <Route path="/stock/delegacoes" element={<P><StockDelegacoes /></P>} />
       <Route path="/stock/exportar" element={<P><ExportarStock /></P>} />
+      <Route path="/stock/armazem" element={<P><Armazem /></P>} />
+      <Route path="/stock/importar-exportar" element={<P><ImportExport /></P>} />
       <Route path="/comunicacao/pedidos" element={<P><Comunicacao /></P>} />
       <Route path="/comunicacao/newsletter" element={<P><Newsletter /></P>} />
       <Route path="/comunicacao/links" element={<P><OutrosLinks /></P>} />

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Upload, Download, FileSpreadsheet, Check, X, ArrowRight } from "lucide-react";
+import { Upload, Download, FileSpreadsheet, Check, X, ArrowRight, PlusCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -18,9 +18,20 @@ const colunasSistema = [
   "Descrição", "Estado", "Localização", "Fornecedor",
 ];
 
+const colunasNovoProduto = [
+  "Nome do Produto", "Categoria", "Quantidade", "Preço Unitário",
+  "Descrição", "Fornecedor",
+];
+
 const ImportExport = () => {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("importar");
+  const [activeTab, setActiveTab] = useState("adicionar");
+
+  // Add products state
+  const [addFile, setAddFile] = useState<File | null>(null);
+  const [addStep, setAddStep] = useState<"upload" | "mapping">("upload");
+  const [addColunasExcel, setAddColunasExcel] = useState<string[]>([]);
+  const [addMapeamento, setAddMapeamento] = useState<Record<string, string>>({});
 
   // Import state
   const [file, setFile] = useState<File | null>(null);
@@ -33,11 +44,25 @@ const ImportExport = () => {
   const [exportFormat, setExportFormat] = useState("xlsx");
   const [exportColunas, setExportColunas] = useState<string[]>(colunasSistema);
 
+  const handleAddFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setAddFile(f);
+    setAddColunasExcel(["Product Name", "Type", "Qty", "Unit Price", "Description", "Supplier"]);
+    setAddStep("mapping");
+  };
+
+  const handleAddProducts = () => {
+    toast({ title: "Produtos adicionados", description: `${addFile?.name} importado com sucesso. Novos produtos adicionados ao sistema.` });
+    setAddStep("upload");
+    setAddFile(null);
+    setAddMapeamento({});
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
     setFile(f);
-    // Simulate detecting Excel columns
     setColunasExcel(["Product Name", "Code", "Category", "Qty", "Price", "Desc", "Status", "Location", "Supplier"]);
     setStep("mapping");
   };
@@ -69,9 +94,78 @@ const ImportExport = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6">
+          <TabsTrigger value="adicionar" className="gap-2"><PlusCircle className="w-4 h-4" /> Adicionar Produtos</TabsTrigger>
           <TabsTrigger value="importar" className="gap-2"><Upload className="w-4 h-4" /> Importar</TabsTrigger>
           <TabsTrigger value="exportar" className="gap-2"><Download className="w-4 h-4" /> Exportar</TabsTrigger>
         </TabsList>
+
+        {/* ADD PRODUCTS TAB */}
+        <TabsContent value="adicionar">
+          {addStep === "upload" && (
+            <div className="bg-card rounded-xl border border-border p-8">
+              <div className="flex flex-col items-center justify-center py-10 border-2 border-dashed border-border rounded-xl">
+                <FileSpreadsheet className="w-12 h-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">Adicionar novos produtos via Excel</h3>
+                <p className="text-sm text-muted-foreground mb-2">Carregue um ficheiro Excel com os novos produtos a adicionar ao sistema.</p>
+                <p className="text-xs text-muted-foreground mb-4">Colunas esperadas: Nome do Produto, Categoria, Quantidade, Preço Unitário, Descrição, Fornecedor</p>
+                <label>
+                  <Input type="file" accept=".xlsx,.xls,.csv" onChange={handleAddFileUpload} className="hidden" />
+                  <Button asChild><span>Selecionar Ficheiro</span></Button>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {addStep === "mapping" && (
+            <div className="space-y-6">
+              <div className="bg-card rounded-xl border border-border p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">Mapear Colunas do Excel</h3>
+                    <p className="text-sm text-muted-foreground">Associe as colunas do ficheiro às colunas do sistema para adicionar novos produtos.</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">
+                    {addFile?.name}
+                  </span>
+                </div>
+
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-secondary/50">
+                      <TableHead>Coluna do Sistema</TableHead>
+                      <TableHead className="w-10 text-center"></TableHead>
+                      <TableHead>Coluna do Excel</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {colunasNovoProduto.map((col) => (
+                      <TableRow key={col}>
+                        <TableCell className="font-medium text-foreground">{col}</TableCell>
+                        <TableCell className="text-center"><ArrowRight className="w-4 h-4 text-muted-foreground mx-auto" /></TableCell>
+                        <TableCell>
+                          <Select value={addMapeamento[col] || ""} onValueChange={(v) => setAddMapeamento({ ...addMapeamento, [col]: v })}>
+                            <SelectTrigger className="w-[220px]"><SelectValue placeholder="Selecionar coluna" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ignorar">— Ignorar —</SelectItem>
+                              {addColunasExcel.map((ce) => (
+                                <SelectItem key={ce} value={ce}>{ce}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => { setAddStep("upload"); setAddFile(null); }}>Voltar</Button>
+                <Button onClick={handleAddProducts} className="gap-2"><Check className="w-4 h-4" /> Adicionar Produtos</Button>
+              </div>
+            </div>
+          )}
+        </TabsContent>
 
         <TabsContent value="importar">
           {step === "upload" && (
