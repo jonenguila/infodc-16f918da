@@ -5,7 +5,7 @@ import {
   ClipboardList, Users, Download, Megaphone, Newspaper,
   ChevronDown, ChevronRight, Info, ShieldCheck,
   FileSpreadsheet, LogOut, LayoutDashboard, Menu, X,
-  Warehouse, Upload,
+  Warehouse, Upload, Tag, Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,9 +28,11 @@ const menuItems: MenuItem[] = [
     label: "Stock",
     icon: Box,
     children: [
-      { label: "Novo Pedido", icon: PlusCircle, path: "/stock/novo-pedido" },
-      { label: "Delegações", icon: Users, path: "/stock/delegacoes" },
+      { label: "Produtos", icon: Package, path: "/stock/produtos" },
+      { label: "Categorias", icon: Tag, path: "/stock/categorias" },
+      { label: "Delegações", icon: Building2, path: "/stock/delegacoes" },
       { label: "Armazém", icon: Warehouse, path: "/stock/armazem" },
+      { label: "Novo Pedido", icon: PlusCircle, path: "/stock/novo-pedido" },
       { label: "Importar/Exportar", icon: Upload, path: "/stock/importar-exportar" },
       { label: "Exportar Stock", icon: Download, path: "/stock/exportar" },
     ],
