@@ -16,6 +16,10 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -46,6 +50,7 @@ const ListagemPedidos = () => {
   const [filtroDataDe, setFiltroDataDe] = useState<Date>();
   const [filtroDataAte, setFiltroDataAte] = useState<Date>();
   const [detalhePedido, setDetalhePedido] = useState<Pedido | null>(null);
+  const [pedidoCancelar, setPedidoCancelar] = useState<Pedido | null>(null);
 
   const filtered = pedidos.filter((p) => {
     if (filtroEstado !== "todos" && p.estado !== filtroEstado) return false;
@@ -209,7 +214,13 @@ const ListagemPedidos = () => {
                   <Badge className={`${prioridadeStyles[p.prioridade]} border-0 text-[11px]`}>{p.prioridade}</Badge>
                 </TableCell>
                 <TableCell>
-                  <Select value={p.estado} onValueChange={(v) => atualizarEstadoPedido(p.id, v as Pedido["estado"])}>
+                  <Select value={p.estado} onValueChange={(v) => {
+                    if (v === "Cancelado") {
+                      setPedidoCancelar(p);
+                    } else {
+                      atualizarEstadoPedido(p.id, v as Pedido["estado"]);
+                    }
+                  }}>
                     <SelectTrigger className="h-7 w-[130px] text-xs border-0 p-0">
                       <Badge className={`${estadoStyles[p.estado]} border-0 text-[11px]`}>{p.estado}</Badge>
                     </SelectTrigger>
@@ -279,6 +290,40 @@ const ListagemPedidos = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Cancel confirmation */}
+      <AlertDialog open={!!pedidoCancelar} onOpenChange={() => setPedidoCancelar(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar pedido?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>Tem a certeza que pretende cancelar este pedido de <strong>{pedidoCancelar?.nomeRequisitante}</strong>?</p>
+              {pedidoCancelar && (
+                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-amber-800 dark:text-amber-300 text-sm">
+                  <strong>⚠ Stock será reposto:</strong>
+                  <ul className="mt-1 list-disc list-inside">
+                    {pedidoCancelar.produtos.map((pp, i) => (
+                      <li key={i}>{pp.produtoNome}: +{pp.quantidade} un.</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">Esta ação não pode ser revertida.</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => {
+              if (pedidoCancelar) {
+                atualizarEstadoPedido(pedidoCancelar.id, "Cancelado");
+                setPedidoCancelar(null);
+              }
+            }}>
+              Confirmar Cancelamento
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
