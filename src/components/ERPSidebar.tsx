@@ -5,7 +5,7 @@ import {
   ClipboardList, Users, Megaphone, Newspaper,
   ChevronDown, Info, ShieldCheck,
   FileSpreadsheet, LogOut, LayoutDashboard,
-  ChevronsLeft, ChevronsRight,
+  ChevronsLeft, ChevronsRight, BarChart3, History, RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,7 +34,17 @@ const menuItems: MenuItem[] = [
   { label: "Produtos", icon: Package, path: "/produtos" },
   { label: "Serviços", icon: Wrench, path: "/servicos" },
   { label: "Projetos Financiados", icon: FolderKanban, path: "/projetos" },
-  { label: "Stock", icon: Box, path: "/stock" },
+  {
+    label: "Stock",
+    icon: Box,
+    children: [
+      { label: "Overview", icon: BarChart3, path: "/stock" },
+      { label: "Produtos", icon: Package, path: "/stock/produtos" },
+      { label: "Pedidos Ativos", icon: ClipboardList, path: "/stock/pedidos" },
+      { label: "Devolução", icon: RotateCcw, path: "/stock/devolucao" },
+      { label: "Histórico", icon: History, path: "/stock/historico" },
+    ],
+  },
   {
     label: "Comunicação",
     icon: Megaphone,

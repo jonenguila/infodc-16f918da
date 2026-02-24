@@ -12,6 +12,7 @@ import Produtos from "./pages/Produtos";
 import Servicos from "./pages/Servicos";
 import ProjetosFinanciados from "./pages/ProjetosFinanciados";
 import StockBrindes from "./pages/StockBrindes";
+import StockDevolucao from "./pages/StockDevolucao";
 import Permissoes from "./pages/Permissoes";
 import GestaoUtilizadores from "./pages/GestaoUtilizadores";
 import Comunicacao from "./pages/Comunicacao";
@@ -55,6 +56,10 @@ const AppRoutes = () => {
       <Route path="/servicos" element={<P><Servicos /></P>} />
       <Route path="/projetos" element={<P><ProjetosFinanciados /></P>} />
       <Route path="/stock" element={<P><StockBrindes /></P>} />
+      <Route path="/stock/produtos" element={<P><StockBrindes defaultTab="stock" /></P>} />
+      <Route path="/stock/pedidos" element={<P><StockBrindes defaultTab="pedidos" /></P>} />
+      <Route path="/stock/devolucao" element={<P><StockDevolucao /></P>} />
+      <Route path="/stock/historico" element={<P><StockBrindes defaultTab="historico" /></P>} />
       <Route path="/comunicacao/pedidos" element={<P><Comunicacao /></P>} />
       <Route path="/comunicacao/newsletter" element={<P><Newsletter /></P>} />
       <Route path="/comunicacao/links" element={<P><OutrosLinks /></P>} />

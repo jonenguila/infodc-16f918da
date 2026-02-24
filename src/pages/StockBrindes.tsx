@@ -484,7 +484,7 @@ const HistoricoTab = () => {
 };
 
 // ─── MAIN PAGE ───
-const StockBrindes = () => {
+const StockBrindes = ({ defaultTab = "overview" }: { defaultTab?: string }) => {
   return (
     <div className="p-8 animate-fade-in bg-background min-h-screen">
       <div className="mb-6">
@@ -492,7 +492,7 @@ const StockBrindes = () => {
         <p className="text-sm text-muted-foreground mt-1">Módulo completo de gestão de stock de brindes</p>
       </div>
 
-      <Tabs defaultValue="overview">
+      <Tabs defaultValue={defaultTab} key={defaultTab}>
         <TabsList className="mb-6">
           <TabsTrigger value="overview" className="gap-2"><BarChart3 className="w-4 h-4" /> Overview</TabsTrigger>
           <TabsTrigger value="stock" className="gap-2"><Package className="w-4 h-4" /> Stock</TabsTrigger>
