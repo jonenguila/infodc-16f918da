@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const tags = ["IA", "IoT", "Big Data", "Cloud", "Automação", "ESG", "Blockchain", "Edge Computing"];
+const tags = ["Passaporte Digital de Produto", "Inteligência Artificial", "Capital Natural", "OCR", "Cidades Inteligentes", "Sustentabilidade", "Rastreabilidade"];
 
 const estados: Record<string, { label: string; class: string }> = {
   em_desenvolvimento: { label: "Em Desenvolvimento", class: "bg-blue-100 text-blue-700" },
@@ -38,7 +38,7 @@ const produtos: Produto[] = [
     nome: "Plataforma Analytics Pro",
     resumo: "Dashboard avançado de análise de dados em tempo real",
     descricao: "Solução completa de Business Intelligence que transforma dados brutos em insights estratégicos. Inclui dashboards interativos, alertas automatizados e integração com múltiplas fontes de dados.",
-    tags: ["IA", "Big Data", "Cloud"],
+    tags: ["Inteligência Artificial", "Capital Natural"],
     estado: "em_desenvolvimento",
     equipa: ["Ana Silva", "João Costa"],
     cliente: "Tech Solutions Lda",
@@ -54,7 +54,7 @@ const produtos: Produto[] = [
     nome: "Smart Factory Monitor",
     resumo: "Sistema de monitorização industrial com sensores IoT",
     descricao: "Plataforma de monitorização em tempo real para linhas de produção industrial. Integra sensores IoT, análise preditiva de falhas e dashboards operacionais para maximizar a eficiência.",
-    tags: ["IoT", "Automação", "Edge Computing"],
+    tags: ["Cidades Inteligentes", "OCR"],
     estado: "concluido",
     equipa: ["Pedro Martins", "Sara Lopes"],
     cliente: "IndustrialCorp",
@@ -70,7 +70,7 @@ const produtos: Produto[] = [
     nome: "ESG Compliance Tracker",
     resumo: "Plataforma de tracking e reporting de métricas ESG",
     descricao: "Ferramenta de gestão e reporte de indicadores ambientais, sociais e de governança (ESG). Automatiza a recolha de dados e gera relatórios conformes com as normativas europeias.",
-    tags: ["ESG", "Cloud"],
+    tags: ["Sustentabilidade", "Capital Natural"],
     estado: "planeado",
     equipa: ["Maria Santos"],
     cliente: "Green Energy SA",
@@ -86,7 +86,7 @@ const produtos: Produto[] = [
     nome: "DataFlow Engine",
     resumo: "Motor de ETL e integração de dados multi-source",
     descricao: "Pipeline de dados de alta performance para extração, transformação e carregamento (ETL) de múltiplas fontes heterogéneas. Suporta streaming em tempo real e processamento em lote.",
-    tags: ["Big Data", "Cloud", "Automação"],
+    tags: ["Passaporte Digital de Produto", "Inteligência Artificial"],
     estado: "em_desenvolvimento",
     equipa: ["Rui Ferreira", "Ana Silva"],
     cliente: "Banco Nacional",
@@ -102,7 +102,7 @@ const produtos: Produto[] = [
     nome: "Chain Verify",
     resumo: "Sistema de rastreabilidade e autenticidade na cadeia de valor",
     descricao: "Solução blockchain para garantir a rastreabilidade e autenticidade de produtos ao longo de toda a cadeia de abastecimento. Utiliza contratos inteligentes para validação automática.",
-    tags: ["Blockchain", "IoT"],
+    tags: ["Rastreabilidade", "Sustentabilidade"],
     estado: "em_pausa",
     equipa: ["João Costa"],
     cliente: "FoodTrace SA",
@@ -118,7 +118,7 @@ const produtos: Produto[] = [
     nome: "Edge AI Gateway",
     resumo: "Gateway inteligente para processamento edge com IA",
     descricao: "Gateway de computação edge com modelos de IA embebidos para processamento local de dados de sensores. Reduz latência e dependência de conectividade cloud em ambientes industriais.",
-    tags: ["IA", "Edge Computing", "IoT"],
+    tags: ["Inteligência Artificial", "OCR", "Cidades Inteligentes"],
     estado: "em_desenvolvimento",
     equipa: ["Pedro Martins", "Sara Lopes", "Rui Ferreira"],
     cliente: "Telecom Plus",
@@ -282,7 +282,7 @@ const Produtos = () => {
             onClick={() => toggleTag("all")}
             className="text-xs h-7"
           >
-            All
+            Todos
           </Button>
           {tags.map((tag) => (
             <Button
