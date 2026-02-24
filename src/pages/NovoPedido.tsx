@@ -50,6 +50,7 @@ const NovoPedido = () => {
   const [produtoSelecionado, setProdutoSelecionado] = useState("");
   const [quantidade, setQuantidade] = useState(1);
   const [produtosPedido, setProdutosPedido] = useState<ProdutoPedido[]>([]);
+  const [tentouSubmeter, setTentouSubmeter] = useState(false);
 
   const produtosComStock = produtos.filter((p) => p.stockAtual > 0);
 
@@ -88,6 +89,7 @@ const NovoPedido = () => {
   };
 
   const handleSubmit = () => {
+    setTentouSubmeter(true);
     if (!dataPedido || !nomeRequisitante || produtosPedido.length === 0) {
       toast({ title: "Campos obrigatórios", description: "Preencha a data, nome do requisitante e adicione pelo menos um produto.", variant: "destructive" });
       return;
@@ -115,15 +117,18 @@ const NovoPedido = () => {
     }
 
     toast({ title: "Pedido criado com sucesso!", description: `Pedido com ${produtosPedido.length} produto(s) registado. Stock atualizado.` });
+    setTentouSubmeter(false);
     limpar();
   };
+
+  const hasError = (field: boolean) => tentouSubmeter && !field;
 
   const DateField = ({ label, required, value, onChange }: { label: string; required?: boolean; value: Date | undefined; onChange: (d: Date | undefined) => void }) => (
     <div className="space-y-2">
       <Label>{label} {required && <span className="text-destructive">*</span>}</Label>
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !value && "text-muted-foreground")}>
+          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !value && "text-muted-foreground", required && hasError(!!value) && "border-destructive ring-1 ring-destructive")}>
             <CalendarIcon className="mr-2 h-4 w-4" />
             {value ? format(value, "d 'de' MMMM, yyyy", { locale: pt }) : "Selecionar data"}
           </Button>
@@ -148,7 +153,7 @@ const NovoPedido = () => {
               <DateField label="Data do Pedido" required value={dataPedido} onChange={setDataPedido} />
               <div className="space-y-2">
                 <Label>Nome do Requisitante <span className="text-destructive">*</span></Label>
-                <Input value={nomeRequisitante} onChange={(e) => setNomeRequisitante(e.target.value)} placeholder="Nome completo" />
+                <Input value={nomeRequisitante} onChange={(e) => setNomeRequisitante(e.target.value)} placeholder="Nome completo" className={cn(hasError(!!nomeRequisitante) && "border-destructive ring-1 ring-destructive")} />
               </div>
               <div className="space-y-2">
                 <Label>Email</Label>
@@ -259,7 +264,7 @@ const NovoPedido = () => {
                 </Table>
               </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground text-sm border border-dashed border-border rounded-lg mt-2">
+              <div className={cn("text-center py-8 text-muted-foreground text-sm border border-dashed rounded-lg mt-2", hasError(produtosPedido.length > 0) ? "border-destructive bg-destructive/5" : "border-border")}>
                 Nenhum produto adicionado ao pedido.
               </div>
             )}

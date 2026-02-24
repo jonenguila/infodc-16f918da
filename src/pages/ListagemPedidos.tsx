@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
-import { Search, ClipboardList, CalendarIcon, Eye } from "lucide-react";
+import { Search, ClipboardList, CalendarIcon, Eye, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +67,31 @@ const ListagemPedidos = () => {
   }).sort((a, b) => new Date(b.criadoEm).getTime() - new Date(a.criadoEm).getTime());
 
   const totalProdutos = (p: Pedido) => p.produtos.reduce((s, pp) => s + pp.quantidade, 0);
+
+  const exportarExcel = () => {
+    if (filtered.length === 0) return;
+    const header = ["Data", "Requisitante", "Email", "Evento", "Origem", "Destino", "Prioridade", "Estado", "Produtos", "Total Qtd."];
+    const rows = filtered.map((p) => [
+      format(new Date(p.dataPedido), "dd/MM/yyyy"),
+      p.nomeRequisitante,
+      p.email || "",
+      p.tipoEvento || "",
+      p.origem || "",
+      p.destino || "",
+      p.prioridade,
+      p.estado,
+      p.produtos.map((pp) => `${pp.produtoNome} (${pp.quantidade})`).join("; "),
+      String(totalProdutos(p)),
+    ]);
+    const csv = "\uFEFF" + [header, ...rows].map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(";")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pedidos_${format(new Date(), "yyyy-MM-dd")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const DateFilter = ({ label, value, onChange }: { label: string; value: Date | undefined; onChange: (d: Date | undefined) => void }) => (
     <Popover>
@@ -144,6 +169,9 @@ const ListagemPedidos = () => {
             Limpar filtros
           </Button>
         )}
+        <Button variant="outline" size="sm" className="gap-2 ml-auto" onClick={exportarExcel}>
+          <Download className="w-3 h-3" /> Exportar Excel
+        </Button>
       </div>
 
       {/* Table */}
