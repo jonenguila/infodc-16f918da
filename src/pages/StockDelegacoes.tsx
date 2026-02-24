@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, Building2 } from "lucide-react";
+import { Plus, Trash2, Building2, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,16 +29,28 @@ const mockDelegacoes: Delegacao[] = [
 const StockDelegacoes = () => {
   const [delegacoes, setDelegacoes] = useState<Delegacao[]>(mockDelegacoes);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({ nome: "", localizacao: "", responsavel: "" });
 
   const openNew = () => {
+    setEditingId(null);
     setFormData({ nome: "", localizacao: "", responsavel: "" });
+    setDialogOpen(true);
+  };
+
+  const openEdit = (del: Delegacao) => {
+    setEditingId(del.id);
+    setFormData({ nome: del.nome, localizacao: del.localizacao, responsavel: del.responsavel });
     setDialogOpen(true);
   };
 
   const handleSave = () => {
     if (!formData.nome.trim()) return;
-    setDelegacoes((prev) => [...prev, { id: Date.now(), nome: formData.nome.trim(), localizacao: formData.localizacao.trim(), responsavel: formData.responsavel.trim() }]);
+    if (editingId !== null) {
+      setDelegacoes((prev) => prev.map((d) => d.id === editingId ? { ...d, nome: formData.nome.trim(), localizacao: formData.localizacao.trim(), responsavel: formData.responsavel.trim() } : d));
+    } else {
+      setDelegacoes((prev) => [...prev, { id: Date.now(), nome: formData.nome.trim(), localizacao: formData.localizacao.trim(), responsavel: formData.responsavel.trim() }]);
+    }
     setDialogOpen(false);
   };
 
@@ -64,7 +76,7 @@ const StockDelegacoes = () => {
               <TableHead>Delegação</TableHead>
               <TableHead>Localização</TableHead>
               <TableHead>Responsável</TableHead>
-              <TableHead className="text-right w-24">Ações</TableHead>
+              <TableHead className="text-right w-28">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -88,6 +100,9 @@ const StockDelegacoes = () => {
                 <TableCell className="text-muted-foreground text-sm">{del.localizacao || "—"}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">{del.responsavel || "—"}</TableCell>
                 <TableCell className="text-right">
+                  <Button variant="ghost" size="icon" onClick={() => openEdit(del)}>
+                    <Pencil className="w-4 h-4 text-muted-foreground" />
+                  </Button>
                   <Button variant="ghost" size="icon" onClick={() => handleDelete(del.id)}>
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
@@ -103,8 +118,8 @@ const StockDelegacoes = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Nova Delegação</DialogTitle>
-            <DialogDescription>Adicione uma nova delegação.</DialogDescription>
+            <DialogTitle>{editingId !== null ? "Editar Delegação" : "Nova Delegação"}</DialogTitle>
+            <DialogDescription>{editingId !== null ? "Altere os dados da delegação." : "Adicione uma nova delegação."}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
             <div className="grid gap-2">
@@ -122,7 +137,7 @@ const StockDelegacoes = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={!formData.nome.trim()}>Criar</Button>
+            <Button onClick={handleSave} disabled={!formData.nome.trim()}>{editingId !== null ? "Guardar" : "Criar"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

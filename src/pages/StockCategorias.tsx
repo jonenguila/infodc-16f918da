@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, Tag } from "lucide-react";
+import { Plus, Trash2, Tag, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,16 +26,28 @@ const mockCategorias: Categoria[] = [
 const StockCategorias = () => {
   const [categorias, setCategorias] = useState<Categoria[]>(mockCategorias);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({ nome: "", descricao: "" });
 
   const openNew = () => {
+    setEditingId(null);
     setFormData({ nome: "", descricao: "" });
+    setDialogOpen(true);
+  };
+
+  const openEdit = (cat: Categoria) => {
+    setEditingId(cat.id);
+    setFormData({ nome: cat.nome, descricao: cat.descricao });
     setDialogOpen(true);
   };
 
   const handleSave = () => {
     if (!formData.nome.trim()) return;
-    setCategorias((prev) => [...prev, { id: Date.now(), nome: formData.nome.trim(), descricao: formData.descricao.trim() }]);
+    if (editingId !== null) {
+      setCategorias((prev) => prev.map((c) => c.id === editingId ? { ...c, nome: formData.nome.trim(), descricao: formData.descricao.trim() } : c));
+    } else {
+      setCategorias((prev) => [...prev, { id: Date.now(), nome: formData.nome.trim(), descricao: formData.descricao.trim() }]);
+    }
     setDialogOpen(false);
   };
 
@@ -60,7 +72,7 @@ const StockCategorias = () => {
               <TableHead className="w-12">#</TableHead>
               <TableHead>Categoria</TableHead>
               <TableHead>Descrição</TableHead>
-              <TableHead className="text-right w-24">Ações</TableHead>
+              <TableHead className="text-right w-28">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -83,6 +95,9 @@ const StockCategorias = () => {
                 </TableCell>
                 <TableCell className="text-muted-foreground text-sm">{cat.descricao || "—"}</TableCell>
                 <TableCell className="text-right">
+                  <Button variant="ghost" size="icon" onClick={() => openEdit(cat)}>
+                    <Pencil className="w-4 h-4 text-muted-foreground" />
+                  </Button>
                   <Button variant="ghost" size="icon" onClick={() => handleDelete(cat.id)}>
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
@@ -98,8 +113,8 @@ const StockCategorias = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Nova Categoria</DialogTitle>
-            <DialogDescription>Adicione uma nova categoria de produtos.</DialogDescription>
+            <DialogTitle>{editingId !== null ? "Editar Categoria" : "Nova Categoria"}</DialogTitle>
+            <DialogDescription>{editingId !== null ? "Altere os dados da categoria." : "Adicione uma nova categoria de produtos."}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
             <div className="grid gap-2">
@@ -113,7 +128,7 @@ const StockCategorias = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={!formData.nome.trim()}>Criar</Button>
+            <Button onClick={handleSave} disabled={!formData.nome.trim()}>{editingId !== null ? "Guardar" : "Criar"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
