@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Shield } from "lucide-react";
+import { Plus, Pencil, Trash2, Shield, Save } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,24 +50,30 @@ const GestaoUtilizadores = () => {
   const handleCreate = () => {
     if (!form.nome || !form.email || !form.password) return;
     const all = getUsers();
-    if (all.some((u) => u.email === form.email)) return;
+    if (all.some((u) => u.email === form.email)) {
+      toast.error("Este utilizador já existe");
+      return;
+    }
     const newUser: StoredUser = { id: crypto.randomUUID(), ...form };
     saveUsers([...all, newUser]);
     refresh();
     setShowNew(false);
     setForm({ nome: "", email: "", cargo: "", perfil: "Utilizador", password: "" });
+    toast.success("Utilizador criado com sucesso");
   };
 
   const handleUpdatePerfil = (id: string, perfil: Perfil) => {
     const all = getUsers();
     saveUsers(all.map((u) => (u.id === id ? { ...u, perfil } : u)));
     refresh();
+    toast.success("Perfil atualizado com sucesso");
   };
 
   const handleDelete = (id: string) => {
     if (id === currentUser?.id) return;
     saveUsers(getUsers().filter((u) => u.id !== id));
     refresh();
+    toast.success("Utilizador eliminado");
   };
 
   return (

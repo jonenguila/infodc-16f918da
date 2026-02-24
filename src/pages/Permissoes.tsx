@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Search, Shield, ShieldCheck, ShieldAlert, Edit } from "lucide-react";
+import { Search, Shield, ShieldCheck, ShieldAlert, Edit, Save } from "lucide-react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -65,6 +66,7 @@ const Permissoes = () => {
       prev.map((u) => u.id === editUser.id ? { ...u, perfil: formPerfil as User["perfil"], permissoes: formPermissoes } : u)
     );
     setDialogOpen(false);
+    toast.success("Permissões guardadas com sucesso");
   };
 
   const getPerfilIcon = (perfil: string) => {
@@ -159,7 +161,7 @@ const Permissoes = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave}>Guardar</Button>
+            <Button onClick={handleSave} className="gap-2"><Save className="w-4 h-4" /> Guardar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
