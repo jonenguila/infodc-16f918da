@@ -326,23 +326,28 @@ export function ERPSidebar({ collapsed, onToggle }: ERPSidebarProps) {
               </div>
             )}
 
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => { logout(); navigate("/login"); }}
-                  className={cn(
-                    "text-[hsl(var(--sidebar-muted))] hover:text-[hsl(var(--destructive))] transition-colors",
-                    collapsed ? "mt-2" : ""
-                  )}
-                  aria-label="Sair"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={8}>
-                Sair
-              </TooltipContent>
-            </Tooltip>
+            {collapsed ? (
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => { logout(); navigate("/login"); }}
+                    className="text-[hsl(var(--sidebar-muted))] hover:text-[hsl(var(--destructive))] transition-colors mt-2"
+                    aria-label="Sair"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={8}>Sair</TooltipContent>
+              </Tooltip>
+            ) : (
+              <button
+                onClick={() => { logout(); navigate("/login"); }}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-[hsl(var(--sidebar-muted))] hover:text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.1)] transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sair</span>
+              </button>
+            )}
           </div>
         </div>
       )}
