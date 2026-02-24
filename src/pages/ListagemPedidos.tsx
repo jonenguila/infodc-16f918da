@@ -42,6 +42,8 @@ const prioridadeStyles: Record<string, string> = {
   Urgente: "bg-red-100 text-red-700",
 };
 
+const ITEMS_PER_PAGE = 10;
+
 const ListagemPedidos = () => {
   const { pedidos, atualizarEstadoPedido } = useStockStore();
   const [search, setSearch] = useState("");
@@ -51,6 +53,7 @@ const ListagemPedidos = () => {
   const [filtroDataAte, setFiltroDataAte] = useState<Date>();
   const [detalhePedido, setDetalhePedido] = useState<Pedido | null>(null);
   const [pedidoCancelar, setPedidoCancelar] = useState<Pedido | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const filtered = pedidos.filter((p) => {
     if (filtroEstado !== "todos" && p.estado !== filtroEstado) return false;
@@ -70,6 +73,10 @@ const ListagemPedidos = () => {
     }
     return true;
   }).sort((a, b) => new Date(b.criadoEm).getTime() - new Date(a.criadoEm).getTime());
+  // Reset page when filters change
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedItems = filtered.slice((safeCurrentPage - 1) * ITEMS_PER_PAGE, safeCurrentPage * ITEMS_PER_PAGE);
 
   const totalProdutos = (p: Pedido) => p.produtos.reduce((s, pp) => s + pp.quantidade, 0);
 
@@ -143,9 +150,9 @@ const ListagemPedidos = () => {
       <div className="flex flex-wrap gap-3 items-center mb-4">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Pesquisar pedido..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9" />
+          <Input placeholder="Pesquisar pedido..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} className="pl-9 h-9" />
         </div>
-        <Select value={filtroEstado} onValueChange={setFiltroEstado}>
+        <Select value={filtroEstado} onValueChange={(v) => { setFiltroEstado(v); setCurrentPage(1); }}>
           <SelectTrigger className="w-[150px] h-9"><SelectValue placeholder="Estado" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos os estados</SelectItem>
@@ -157,7 +164,7 @@ const ListagemPedidos = () => {
             <SelectItem value="Cancelado">Cancelado</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={filtroPrioridade} onValueChange={setFiltroPrioridade}>
+        <Select value={filtroPrioridade} onValueChange={(v) => { setFiltroPrioridade(v); setCurrentPage(1); }}>
           <SelectTrigger className="w-[140px] h-9"><SelectValue placeholder="Prioridade" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todas</SelectItem>
@@ -201,7 +208,7 @@ const ListagemPedidos = () => {
                   Sem pedidos registados.
                 </TableCell>
               </TableRow>
-            ) : filtered.map((p) => (
+            ) : paginatedItems.map((p) => (
               <TableRow key={p.id} className="hover:bg-muted/30">
                 <TableCell className="text-muted-foreground text-sm">
                   {format(new Date(p.dataPedido), "dd/MM/yyyy")}
@@ -244,7 +251,39 @@ const ListagemPedidos = () => {
           </TableBody>
         </Table>
       </div>
-      <p className="text-xs text-muted-foreground mt-2">{filtered.length} pedido(s)</p>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between mt-3">
+        <p className="text-xs text-muted-foreground">
+          {filtered.length} pedido(s) · Página {safeCurrentPage} de {totalPages}
+        </p>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" disabled={safeCurrentPage <= 1} onClick={() => setCurrentPage(safeCurrentPage - 1)}>
+              Anterior
+            </Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - safeCurrentPage) <= 1)
+              .reduce<(number | "...")[]>((acc, p, idx, arr) => {
+                if (idx > 0 && p - (arr[idx - 1]) > 1) acc.push("...");
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((p, i) =>
+                p === "..." ? (
+                  <span key={`e${i}`} className="px-2 text-xs text-muted-foreground">…</span>
+                ) : (
+                  <Button key={p} variant={p === safeCurrentPage ? "default" : "outline"} size="sm" className="w-8 h-8 p-0" onClick={() => setCurrentPage(p as number)}>
+                    {p}
+                  </Button>
+                )
+              )}
+            <Button variant="outline" size="sm" disabled={safeCurrentPage >= totalPages} onClick={() => setCurrentPage(safeCurrentPage + 1)}>
+              Seguinte
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Detail dialog */}
       <Dialog open={!!detalhePedido} onOpenChange={() => setDetalhePedido(null)}>
