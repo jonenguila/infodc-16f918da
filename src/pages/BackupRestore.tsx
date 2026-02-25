@@ -1,11 +1,13 @@
 import { useRef, useState } from "react";
-import { Download, Upload, Database, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Download, Upload, Database, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getFullBackup, restoreFromBackup } from "@/stores/stockStore";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
+import { pt } from "date-fns/locale";
+import { getLastBackupDate, setLastBackupDate, isBackupOverdue } from "@/lib/backupUtils";
 
 const BackupRestore = () => {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -22,8 +24,12 @@ const BackupRestore = () => {
     a.download = `backup_infodc_${format(new Date(), "yyyy-MM-dd_HHmm")}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    setLastBackupDate();
     toast.success("Backup exportado com sucesso");
   };
+
+  const lastBackup = getLastBackupDate();
+  const overdue = isBackupOverdue();
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -71,6 +77,28 @@ const BackupRestore = () => {
           Exporte uma cópia de segurança dos dados ou restaure a partir de um ficheiro anterior.
         </p>
       </div>
+
+      {/* Last backup status */}
+      <Card className={`mb-6 max-w-3xl ${overdue ? "border-amber-500/30 bg-amber-50/50" : "border-green-500/20 bg-green-50/30"}`}>
+        <CardContent className="p-4 flex items-center gap-3">
+          {overdue ? (
+            <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
+          ) : (
+            <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+          )}
+          <div className="text-sm">
+            {lastBackup ? (
+              <p>
+                <span className="text-muted-foreground">Último backup:</span>{" "}
+                <strong>{format(lastBackup, "dd/MM/yyyy 'às' HH:mm")}</strong>{" "}
+                <span className="text-muted-foreground">({formatDistanceToNow(lastBackup, { addSuffix: true, locale: pt })})</span>
+              </p>
+            ) : (
+              <p className="font-medium text-amber-700">Nunca foi feito um backup. Recomendamos exportar agora.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl">
         <Card className="border-primary/20">
