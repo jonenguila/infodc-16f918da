@@ -43,8 +43,6 @@ const menuItems: MenuItem[] = [
       { label: "Produtos", icon: Package, path: "/stock/produtos" },
       { label: "Tipologias", icon: Tag, path: "/stock/tipologias" },
       { label: "Localizações", icon: MapPin, path: "/stock/localizacoes" },
-      { label: "Pedidos Ativos", icon: ClipboardList, path: "/stock/pedidos" },
-      { label: "Novo Pedido", icon: FilePlus2, path: "/stock/novo-pedido" },
       { label: "Listagem Pedidos", icon: List, path: "/stock/listagem-pedidos" },
       { label: "Devolução", icon: RotateCcw, path: "/stock/devolucao" },
       { label: "Histórico", icon: History, path: "/stock/historico" },
