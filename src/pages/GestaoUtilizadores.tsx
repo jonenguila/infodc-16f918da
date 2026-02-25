@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Shield, Save } from "lucide-react";
+import { Plus, Pencil, Trash2, Shield, Save, KeyRound } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Perfil } from "@/lib/permissions";
 
@@ -42,6 +42,8 @@ const GestaoUtilizadores = () => {
   const [showNew, setShowNew] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ nome: "", email: "", cargo: "", perfil: "Utilizador" as Perfil, password: "" });
+  const [resetUser, setResetUser] = useState<StoredUser | null>(null);
+  const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => { setUsers(getUsers()); }, []);
 
@@ -74,6 +76,16 @@ const GestaoUtilizadores = () => {
     saveUsers(getUsers().filter((u) => u.id !== id));
     refresh();
     toast.success("Utilizador eliminado");
+  };
+
+  const handleResetPassword = () => {
+    if (!resetUser || !newPassword) return;
+    const all = getUsers();
+    saveUsers(all.map((u) => (u.id === resetUser.id ? { ...u, password: newPassword } : u)));
+    refresh();
+    setResetUser(null);
+    setNewPassword("");
+    toast.success("Palavra-passe redefinida com sucesso");
   };
 
   return (
@@ -141,6 +153,15 @@ const GestaoUtilizadores = () => {
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="text-muted-foreground hover:text-accent-foreground"
+                  onClick={() => { setResetUser(u); setNewPassword(""); }}
+                  title="Redefinir palavra-passe"
+                >
+                  <KeyRound className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="text-muted-foreground hover:text-destructive"
                   onClick={() => handleDelete(u.id)}
                   disabled={u.id === currentUser?.id}
@@ -152,6 +173,24 @@ const GestaoUtilizadores = () => {
           </Card>
         ))}
       </div>
+      <Dialog open={!!resetUser} onOpenChange={(open) => { if (!open) { setResetUser(null); setNewPassword(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Redefinir Palavra-passe</DialogTitle>
+            <DialogDescription>Introduza a nova palavra-passe para {resetUser?.nome}.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label>Nova Palavra-passe *</Label>
+              <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Nova palavra-passe" />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => { setResetUser(null); setNewPassword(""); }}>Cancelar</Button>
+              <Button onClick={handleResetPassword} disabled={!newPassword}>Redefinir</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
