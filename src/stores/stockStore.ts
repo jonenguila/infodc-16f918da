@@ -59,6 +59,22 @@ export interface PedidoLevantamento {
   estado: "Ativo" | "Concluído";
 }
 
+export interface ProdutoDevolucaoDoc {
+  produtoId: number;
+  produtoNome: string;
+  quantidade: number;
+}
+
+export interface DocumentoDevolucao {
+  id: number;
+  nome: string;
+  nomeEvento: string;
+  dataEntrega: string;
+  responsavel: string;
+  produtos: ProdutoDevolucaoDoc[];
+  observacoes: string;
+}
+
 const DEFAULT_STOCK_MINIMO = 40;
 
 const produtosIniciais: Produto[] = [
@@ -77,6 +93,7 @@ let _produtos: Produto[] = [...produtosIniciais];
 let _movimentos: Movimento[] = [];
 let _pedidos: Pedido[] = [];
 let _pedidosLevantamento: PedidoLevantamento[] = [];
+let _documentosDevolucao: DocumentoDevolucao[] = [];
 let _listeners: (() => void)[] = [];
 
 function notify() {
@@ -99,6 +116,7 @@ export function useStockStore() {
   const movimentos = _movimentos;
   const pedidos = _pedidos;
   const pedidosLevantamento = _pedidosLevantamento;
+  const documentosDevolucao = _documentosDevolucao;
 
   const getEstado = (p: Produto): "OK" | "Abaixo do mínimo" | "Esgotado" => {
     if (p.stockAtual === 0) return "Esgotado";
@@ -228,17 +246,41 @@ export function useStockStore() {
     return null;
   };
 
+  const registarDocumentoDevolucao = (doc: Omit<DocumentoDevolucao, "id">): void => {
+    const newDoc: DocumentoDevolucao = { ...doc, id: Date.now() };
+    _documentosDevolucao = [newDoc, ..._documentosDevolucao];
+    // Add stock back and create movements for each product
+    for (const pp of doc.produtos) {
+      const produto = _produtos.find((p) => p.id === pp.produtoId);
+      if (produto) produto.stockAtual += pp.quantidade;
+      _movimentos = [..._movimentos, {
+        id: Date.now() + pp.produtoId,
+        produtoId: pp.produtoId,
+        produtoNome: pp.produtoNome,
+        tipo: "devolucao" as const,
+        quantidade: pp.quantidade,
+        data: doc.dataEntrega,
+        responsavel: doc.responsavel,
+        evento: doc.nomeEvento,
+      }];
+    }
+    _produtos = [..._produtos];
+    notify();
+  };
+
   return {
     produtos,
     movimentos,
     pedidos,
     pedidosLevantamento,
+    documentosDevolucao,
     getEstado,
     importarExcel,
     criarPedido,
     atualizarEstadoPedido,
     criarLevantamento,
     registarDevolucao,
+    registarDocumentoDevolucao,
     DEFAULT_STOCK_MINIMO,
   };
 }

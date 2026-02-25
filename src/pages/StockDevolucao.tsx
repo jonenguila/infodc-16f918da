@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
+import { type ProdutoDevolucaoDoc } from "@/stores/stockStore";
 import {
   RotateCcw, FileText, Search, Plus, Trash2, CalendarIcon,
 } from "lucide-react";
@@ -27,30 +28,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useStockStore } from "@/stores/stockStore";
 import { cn } from "@/lib/utils";
 
-interface ProdutoDevolucao {
-  produtoId: number;
-  produtoNome: string;
-  quantidade: number;
-}
-
-interface DocumentoDevolucao {
-  id: number;
-  nome: string;
-  nomeEvento: string;
-  dataEntrega: string;
-  responsavel: string;
-  produtos: ProdutoDevolucao[];
-  observacoes: string;
-}
-
-let _documentos: DocumentoDevolucao[] = [];
-
 const StockDevolucao = () => {
-  const { produtos } = useStockStore();
+  const { produtos, documentosDevolucao, registarDocumentoDevolucao } = useStockStore();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [, setTick] = useState(0);
 
   // Form state
   const [nome, setNome] = useState("");
@@ -60,7 +42,7 @@ const StockDevolucao = () => {
   const [observacoes, setObservacoes] = useState("");
   const [produtoSelecionado, setProdutoSelecionado] = useState("");
   const [quantidade, setQuantidade] = useState(1);
-  const [produtosDevolucao, setProdutosDevolucao] = useState<ProdutoDevolucao[]>([]);
+  const [produtosDevolucao, setProdutosDevolucao] = useState<ProdutoDevolucaoDoc[]>([]);
   const [tentouSubmeter, setTentouSubmeter] = useState(false);
 
   const camposValidos = nome && nomeEvento && dataEntrega && responsavel && produtosDevolucao.length > 0;
@@ -99,25 +81,22 @@ const StockDevolucao = () => {
       toast({ title: "Campos obrigatórios", description: "Preencha todos os campos obrigatórios (*) e adicione pelo menos um produto.", variant: "destructive" });
       return;
     }
-    const doc: DocumentoDevolucao = {
-      id: Date.now(),
+    registarDocumentoDevolucao({
       nome,
       nomeEvento,
       dataEntrega: dataEntrega!.toISOString().slice(0, 10),
       responsavel,
       produtos: [...produtosDevolucao],
       observacoes,
-    };
-    _documentos = [doc, ..._documentos];
+    });
     toast({ title: "Devolução registada", description: `Documento "${nome}" criado com ${produtosDevolucao.length} produto(s).` });
     setDialogOpen(false);
     limparForm();
-    setTick((t) => t + 1);
   };
 
-  const totalUnidades = _documentos.reduce((s, d) => s + d.produtos.reduce((a, p) => a + p.quantidade, 0), 0);
+  const totalUnidades = documentosDevolucao.reduce((s, d) => s + d.produtos.reduce((a, p) => a + p.quantidade, 0), 0);
 
-  const filteredDocs = _documentos.filter(
+  const filteredDocs = documentosDevolucao.filter(
     (d) =>
       d.nome.toLowerCase().includes(search.toLowerCase()) ||
       d.nomeEvento.toLowerCase().includes(search.toLowerCase()) ||
@@ -154,7 +133,7 @@ const StockDevolucao = () => {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
         <Card><CardContent className="p-4 text-center">
           <FileText className="w-5 h-5 mx-auto mb-1 text-primary" />
-          <p className="text-2xl font-bold text-foreground">{_documentos.length}</p>
+          <p className="text-2xl font-bold text-foreground">{documentosDevolucao.length}</p>
           <p className="text-[11px] text-muted-foreground">Total Documentos</p>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
