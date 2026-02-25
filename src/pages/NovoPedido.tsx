@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
-import { Plus, Trash2, CalendarIcon, Send, X, AlertCircle } from "lucide-react";
+import { Plus, Trash2, CalendarIcon, Send, X, AlertCircle, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -20,7 +20,6 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useStockStore } from "@/stores/stockStore";
 
-const armazens = ["SEDE", "Armazém Sul", "Armazém Principal", "Armazém Norte"];
 const tiposEvento = ["Conferência", "Workshop", "Feira", "Formação", "Evento Social", "Reunião Institucional", "Outro"];
 const prioridades: Array<"Baixa" | "Média" | "Alta" | "Urgente"> = ["Baixa", "Média", "Alta", "Urgente"];
 
@@ -38,10 +37,8 @@ const NovoPedido = () => {
   const [dataPedido, setDataPedido] = useState<Date>();
   const [nomeRequisitante, setNomeRequisitante] = useState("");
   const [email, setEmail] = useState("");
-  const [armazem, setArmazem] = useState("");
-  const [destino, setDestino] = useState("");
-  const [descricaoDestino, setDescricaoDestino] = useState("");
   const [tipoEvento, setTipoEvento] = useState("");
+  const [nomeEvento, setNomeEvento] = useState("");
   const [dataEvento, setDataEvento] = useState<Date>();
   const [dataRecolha, setDataRecolha] = useState<Date>();
   const [responsavelLevantamento, setResponsavelLevantamento] = useState("");
@@ -82,29 +79,33 @@ const NovoPedido = () => {
   };
 
   const limpar = () => {
-    setDataPedido(undefined); setNomeRequisitante(""); setEmail(""); setArmazem("");
-    setDestino(""); setDescricaoDestino(""); setTipoEvento(""); setDataEvento(undefined);
+    setDataPedido(undefined); setNomeRequisitante(""); setEmail("");
+    setTipoEvento(""); setNomeEvento(""); setDataEvento(undefined);
     setDataRecolha(undefined); setResponsavelLevantamento(""); setPrioridade("Média");
     setObservacoes(""); setProdutoSelecionado(""); setQuantidade(1); setProdutosPedido([]);
+    setTentouSubmeter(false);
   };
+
+  const camposValidos = dataPedido && nomeRequisitante && email && tipoEvento && nomeEvento && dataEvento && dataRecolha && responsavelLevantamento && prioridade && produtosPedido.length > 0;
 
   const handleSubmit = () => {
     setTentouSubmeter(true);
-    if (!dataPedido || !nomeRequisitante || produtosPedido.length === 0) {
-      toast({ title: "Campos obrigatórios", description: "Preencha a data, nome do requisitante e adicione pelo menos um produto.", variant: "destructive" });
+    if (!camposValidos) {
+      toast({ title: "Campos obrigatórios", description: "Preencha todos os campos obrigatórios (*) e adicione pelo menos um produto.", variant: "destructive" });
       return;
     }
 
     const err = criarPedido({
-      dataPedido: dataPedido.toISOString(),
+      dataPedido: dataPedido!.toISOString(),
       nomeRequisitante,
       email,
-      origem: armazem,
-      destino,
-      descricaoDestino,
+      origem: "",
+      destino: "",
+      descricaoDestino: "",
       tipoEvento,
-      dataEvento: dataEvento?.toISOString() || "",
-      dataRecolha: dataRecolha?.toISOString() || "",
+      nomeEvento,
+      dataEvento: dataEvento!.toISOString(),
+      dataRecolha: dataRecolha!.toISOString(),
       responsavelLevantamento,
       prioridade,
       observacoes,
@@ -117,11 +118,10 @@ const NovoPedido = () => {
     }
 
     toast({ title: "Pedido criado com sucesso!", description: `Pedido com ${produtosPedido.length} produto(s) registado. Stock atualizado.` });
-    setTentouSubmeter(false);
     limpar();
   };
 
-  const hasError = (field: boolean) => tentouSubmeter && !field;
+  const hasError = (condition: boolean) => tentouSubmeter && !condition;
 
   const DateField = ({ label, required, value, onChange }: { label: string; required?: boolean; value: Date | undefined; onChange: (d: Date | undefined) => void }) => (
     <div className="space-y-2">
@@ -148,7 +148,9 @@ const NovoPedido = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
+          {/* Informações do Requisitante */}
           <section className="bg-card rounded-xl border border-border p-6 space-y-4">
+            <h2 className="text-base font-semibold text-foreground">Informações do Requisitante</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <DateField label="Data do Pedido" required value={dataPedido} onChange={setDataPedido} />
               <div className="space-y-2">
@@ -156,48 +158,37 @@ const NovoPedido = () => {
                 <Input value={nomeRequisitante} onChange={(e) => setNomeRequisitante(e.target.value)} placeholder="Nome completo" className={cn(hasError(!!nomeRequisitante) && "border-destructive ring-1 ring-destructive")} />
               </div>
               <div className="space-y-2">
-                <Label>Email</Label>
-                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com" />
-              </div>
-              <div className="space-y-2">
-                <Label>Origem do Produto</Label>
-                <Select value={armazem} onValueChange={setArmazem}>
-                  <SelectTrigger><SelectValue placeholder="Selecionar armazém" /></SelectTrigger>
-                  <SelectContent>
-                    {armazens.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Destino do Produto</Label>
-                <Input value={destino} onChange={(e) => setDestino(e.target.value)} placeholder="Ex: Departamento de RH" />
-              </div>
-              <div className="space-y-2">
-                <Label>Descrição do Local de Destino</Label>
-                <Input value={descricaoDestino} onChange={(e) => setDescricaoDestino(e.target.value)} placeholder="Detalhes sobre o local" />
+                <Label>Email <span className="text-destructive">*</span></Label>
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com" className={cn(hasError(!!email) && "border-destructive ring-1 ring-destructive")} />
               </div>
             </div>
           </section>
 
+          {/* Detalhes do Evento */}
           <section className="bg-card rounded-xl border border-border p-6 space-y-4">
+            <h2 className="text-base font-semibold text-foreground">Detalhes do Evento</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Tipo de Evento</Label>
+                <Label>Tipo de Evento <span className="text-destructive">*</span></Label>
                 <Select value={tipoEvento} onValueChange={setTipoEvento}>
-                  <SelectTrigger><SelectValue placeholder="Selecionar tipo de evento" /></SelectTrigger>
+                  <SelectTrigger className={cn(hasError(!!tipoEvento) && "border-destructive ring-1 ring-destructive")}><SelectValue placeholder="Selecionar tipo de evento" /></SelectTrigger>
                   <SelectContent>
                     {tiposEvento.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              <DateField label="Data do Evento" value={dataEvento} onChange={setDataEvento} />
-              <DateField label="Data Prevista de Recolha" value={dataRecolha} onChange={setDataRecolha} />
               <div className="space-y-2">
-                <Label>Responsável pelo Levantamento</Label>
-                <Input value={responsavelLevantamento} onChange={(e) => setResponsavelLevantamento(e.target.value)} placeholder="Nome do responsável" />
+                <Label>Nome do Evento <span className="text-destructive">*</span></Label>
+                <Input value={nomeEvento} onChange={(e) => setNomeEvento(e.target.value)} placeholder="Ex: Web Summit 2025" className={cn(hasError(!!nomeEvento) && "border-destructive ring-1 ring-destructive")} />
+              </div>
+              <DateField label="Data do Evento" required value={dataEvento} onChange={setDataEvento} />
+              <DateField label="Data Prevista de Recolha" required value={dataRecolha} onChange={setDataRecolha} />
+              <div className="space-y-2">
+                <Label>Responsável pelo Levantamento <span className="text-destructive">*</span></Label>
+                <Input value={responsavelLevantamento} onChange={(e) => setResponsavelLevantamento(e.target.value)} placeholder="Nome do responsável" className={cn(hasError(!!responsavelLevantamento) && "border-destructive ring-1 ring-destructive")} />
               </div>
               <div className="space-y-2">
-                <Label>Prioridade</Label>
+                <Label>Prioridade <span className="text-destructive">*</span></Label>
                 <Select value={prioridade} onValueChange={(v) => setPrioridade(v as typeof prioridade)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -208,6 +199,7 @@ const NovoPedido = () => {
             </div>
           </section>
 
+          {/* Produtos */}
           <section className="bg-card rounded-xl border border-border p-6 space-y-4">
             <h2 className="text-base font-semibold text-foreground">Adicionar Produtos</h2>
             <div className="flex flex-wrap items-end gap-3">
@@ -270,12 +262,14 @@ const NovoPedido = () => {
             )}
           </section>
 
+          {/* Observações */}
           <section className="bg-card rounded-xl border border-border p-6 space-y-4">
             <h2 className="text-base font-semibold text-foreground">Observações</h2>
             <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={3} placeholder="Informações adicionais sobre o pedido..." />
           </section>
         </div>
 
+        {/* Lembretes */}
         <div className="lg:col-span-1">
           <div className="bg-card rounded-xl border border-border p-6 sticky top-8 space-y-5">
             <h2 className="text-base font-semibold text-foreground">Lembretes Importantes:</h2>
@@ -283,8 +277,23 @@ const NovoPedido = () => {
               <li className="flex gap-2 leading-relaxed"><span className="text-primary mt-0.5">•</span>Verificar stock com antecedência.</li>
               <li className="flex gap-2 leading-relaxed"><span className="text-primary mt-0.5">•</span>Vigiar os materiais e brindes durante o evento.</li>
               <li className="flex gap-2 leading-relaxed"><span className="text-primary mt-0.5">•</span>Privilegiar oferta a quem segue o Data CoLAB nas redes sociais.</li>
-              <li className="flex gap-2 leading-relaxed"><span className="text-primary mt-0.5">•</span>Contabilizar e devolver os brindes após o evento.</li>
+              <li className="flex gap-2 leading-relaxed"><span className="text-primary mt-0.5">•</span>O levantamento é feito na delegação de Viana do Castelo. Caso não consiga levantar, arranjar um colaborador que levante por si.</li>
+              <li className="flex gap-2 leading-relaxed"><span className="text-primary mt-0.5">•</span>Contabilizar e devolver os brindes após o evento. Deve ser preenchido o campo "Devolução" no +InfoDataCoLAB, depois do ato da entrega na delegação de Viana do Castelo ao cuidado do colaborador Jorge Rodrigues.</li>
               <li className="flex gap-2 leading-relaxed"><span className="text-primary mt-0.5">•</span>Caso existam brindes não utilizados, estes devem ser devolvidos e registados.</li>
+              <li className="flex gap-2 leading-relaxed">
+                <span className="text-primary mt-0.5">•</span>
+                <span>
+                  Não te esqueças de registar a tua ida ao evento no formulário:{" "}
+                  <a
+                    href="https://forms.office.com/Pages/ResponsePage.aspx?id=WjgSWLKyyEaD2WOOg1g5qNFSEvuXwzROiN58fyl-yUdUMEw2VVExNFRIUDRFM1RRVEM5SFYxUU1KNS4u"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline inline-flex items-center gap-1 hover:text-primary/80"
+                  >
+                    Requerimentos de Pedidos de Comunicação <ExternalLink className="w-3 h-3" />
+                  </a>
+                </span>
+              </li>
             </ul>
           </div>
         </div>

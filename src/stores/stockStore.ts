@@ -34,6 +34,7 @@ export interface Pedido {
   destino: string;
   descricaoDestino: string;
   tipoEvento: string;
+  nomeEvento: string;
   dataEvento: string;
   dataRecolha: string;
   responsavelLevantamento: string;

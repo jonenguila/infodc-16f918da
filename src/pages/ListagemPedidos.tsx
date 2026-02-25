@@ -82,14 +82,13 @@ const ListagemPedidos = () => {
 
   const exportarExcel = () => {
     if (filtered.length === 0) return;
-    const header = ["Data", "Requisitante", "Email", "Evento", "Origem", "Destino", "Prioridade", "Estado", "Produtos", "Total Qtd."];
+    const header = ["Data", "Requisitante", "Email", "Tipo Evento", "Nome Evento", "Prioridade", "Estado", "Produtos", "Total Qtd."];
     const rows = filtered.map((p) => [
       format(new Date(p.dataPedido), "dd/MM/yyyy"),
       p.nomeRequisitante,
       p.email || "",
       p.tipoEvento || "",
-      p.origem || "",
-      p.destino || "",
+      (p as any).nomeEvento || "",
       p.prioridade,
       p.estado,
       p.produtos.map((pp) => `${pp.produtoNome} (${pp.quantidade})`).join("; "),
@@ -194,7 +193,6 @@ const ListagemPedidos = () => {
               <TableHead>Data</TableHead>
               <TableHead>Requisitante</TableHead>
               <TableHead>Evento</TableHead>
-              <TableHead>Origem</TableHead>
               <TableHead className="text-center">Produtos</TableHead>
               <TableHead>Prioridade</TableHead>
               <TableHead>Estado</TableHead>
@@ -204,7 +202,7 @@ const ListagemPedidos = () => {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
                   Sem pedidos registados.
                 </TableCell>
               </TableRow>
@@ -214,8 +212,7 @@ const ListagemPedidos = () => {
                   {format(new Date(p.dataPedido), "dd/MM/yyyy")}
                 </TableCell>
                 <TableCell className="font-medium text-foreground">{p.nomeRequisitante}</TableCell>
-                <TableCell className="text-muted-foreground text-sm">{p.tipoEvento || "—"}</TableCell>
-                <TableCell className="text-muted-foreground text-sm">{p.origem || "—"}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">{(p as any).nomeEvento || p.tipoEvento || "—"}</TableCell>
                 <TableCell className="text-center font-medium text-foreground">{totalProdutos(p)}</TableCell>
                 <TableCell>
                   <Badge className={`${prioridadeStyles[p.prioridade]} border-0 text-[11px]`}>{p.prioridade}</Badge>
@@ -297,9 +294,8 @@ const ListagemPedidos = () => {
                 <div><span className="text-muted-foreground">Data:</span> <strong>{format(new Date(detalhePedido.dataPedido), "dd/MM/yyyy")}</strong></div>
                 <div><span className="text-muted-foreground">Requisitante:</span> <strong>{detalhePedido.nomeRequisitante}</strong></div>
                 <div><span className="text-muted-foreground">Email:</span> {detalhePedido.email || "—"}</div>
-                <div><span className="text-muted-foreground">Origem:</span> {detalhePedido.origem || "—"}</div>
-                <div><span className="text-muted-foreground">Destino:</span> {detalhePedido.destino || "—"}</div>
-                <div><span className="text-muted-foreground">Evento:</span> {detalhePedido.tipoEvento || "—"}</div>
+                <div><span className="text-muted-foreground">Tipo de Evento:</span> {detalhePedido.tipoEvento || "—"}</div>
+                <div><span className="text-muted-foreground">Nome do Evento:</span> {(detalhePedido as any).nomeEvento || "—"}</div>
                 <div><span className="text-muted-foreground">Responsável:</span> {detalhePedido.responsavelLevantamento || "—"}</div>
                 <div><span className="text-muted-foreground">Prioridade:</span> <Badge className={`${prioridadeStyles[detalhePedido.prioridade]} border-0 text-[11px]`}>{detalhePedido.prioridade}</Badge></div>
               </div>
