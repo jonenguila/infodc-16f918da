@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Package, AlertTriangle, Search, Plus, Upload, RotateCcw,
   BarChart3, ClipboardList, History, Archive, FileSpreadsheet,
-  CheckCircle2, ArrowDownCircle, ArrowUpCircle,
+  CheckCircle2, ArrowDownCircle, ArrowUpCircle, CalendarIcon,
+  FileDown, Users,
 } from "lucide-react";
+import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths } from "date-fns";
+import { pt } from "date-fns/locale";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +24,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useStockStore } from "@/stores/stockStore";
 
@@ -429,55 +437,390 @@ const PedidosAtivosTab = () => {
 };
 
 // ─── HISTÓRICO TAB ───
+type HistFilterMode = "all" | "month" | "year" | "range";
+
+interface HistoricoRow {
+  data: string;
+  documento: string;
+  evento: string;
+  produto: string;
+  quantidade: number;
+  responsavel: string;
+  tipo: "Pedido" | "Devolução";
+  observacoes: string;
+}
+
 const HistoricoTab = () => {
-  const { pedidosLevantamento } = useStockStore();
-  const concluidos = pedidosLevantamento.filter((p) => p.estado === "Concluído");
+  const { pedidos, pedidosLevantamento, movimentos } = useStockStore();
+
+  const [filterMode, setFilterMode] = useState<HistFilterMode>("all");
+  const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), "yyyy-MM"));
+  const [selectedYear, setSelectedYear] = useState(() => format(new Date(), "yyyy"));
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
+  const [collaborator, setCollaborator] = useState("all");
+  const [applied, setApplied] = useState(false);
+
+  // Build unified rows from pedidos + movimentos
+  const allRows: HistoricoRow[] = useMemo(() => {
+    const rows: HistoricoRow[] = [];
+
+    pedidos.forEach((p) => {
+      p.produtos.forEach((pp) => {
+        rows.push({
+          data: p.criadoEm ? format(parseISO(p.criadoEm), "yyyy-MM-dd") : p.dataPedido,
+          documento: `Pedido #${p.id}`,
+          evento: p.nomeEvento || p.tipoEvento,
+          produto: pp.produtoNome,
+          quantidade: pp.quantidade,
+          responsavel: p.nomeRequisitante || p.responsavelLevantamento,
+          tipo: "Pedido",
+          observacoes: p.observacoes || "",
+        });
+      });
+    });
+
+    movimentos.filter((m) => m.tipo === "devolucao").forEach((m) => {
+      rows.push({
+        data: m.data,
+        documento: `Devolução #${m.id}`,
+        evento: m.evento,
+        produto: m.produtoNome,
+        quantidade: m.quantidade,
+        responsavel: m.responsavel,
+        tipo: "Devolução",
+        observacoes: "",
+      });
+    });
+
+    // Also include concluded levantamentos not already covered
+    pedidosLevantamento.filter((p) => p.estado === "Concluído").forEach((p) => {
+      const alreadyHasMovimento = movimentos.some((m) => m.tipo === "levantamento" && m.produtoId === p.produtoId && m.evento === p.evento);
+      if (!alreadyHasMovimento) {
+        rows.push({
+          data: p.data,
+          documento: `Levantamento #${p.id}`,
+          evento: p.evento,
+          produto: p.produtoNome,
+          quantidade: p.quantidadeLevantada,
+          responsavel: p.responsavel,
+          tipo: "Pedido",
+          observacoes: `Devolvido: ${p.quantidadeDevolvida} | Consumo: ${p.consumoReal}`,
+        });
+      }
+    });
+
+    return rows.sort((a, b) => b.data.localeCompare(a.data));
+  }, [pedidos, movimentos, pedidosLevantamento]);
+
+  // All unique collaborators
+  const collaborators = useMemo(() => {
+    const set = new Set(allRows.map((r) => r.responsavel).filter(Boolean));
+    return Array.from(set).sort();
+  }, [allRows]);
+
+  // Filtered rows
+  const filteredRows = useMemo(() => {
+    let rows = allRows;
+
+    if (filterMode === "month" || (filterMode === "all" && applied)) {
+      // no date filter for "all"
+    }
+
+    if (filterMode === "month") {
+      const [y, m] = selectedMonth.split("-").map(Number);
+      const start = startOfMonth(new Date(y, m - 1));
+      const end = endOfMonth(new Date(y, m - 1));
+      rows = rows.filter((r) => {
+        const d = parseISO(r.data);
+        return isWithinInterval(d, { start, end });
+      });
+    } else if (filterMode === "year") {
+      const y = parseInt(selectedYear);
+      const start = startOfYear(new Date(y, 0));
+      const end = endOfYear(new Date(y, 0));
+      rows = rows.filter((r) => {
+        const d = parseISO(r.data);
+        return isWithinInterval(d, { start, end });
+      });
+    } else if (filterMode === "range" && dateFrom && dateTo) {
+      rows = rows.filter((r) => {
+        const d = parseISO(r.data);
+        return isWithinInterval(d, { start: dateFrom, end: dateTo });
+      });
+    }
+
+    if (collaborator !== "all") {
+      rows = rows.filter((r) => r.responsavel === collaborator);
+    }
+
+    return rows;
+  }, [allRows, filterMode, selectedMonth, selectedYear, dateFrom, dateTo, collaborator, applied]);
+
+  // Summary
+  const totalMovimentos = filteredRows.length;
+  const totalUnidades = filteredRows.reduce((s, r) => s + r.quantidade, 0);
+  const totalColaboradores = new Set(filteredRows.map((r) => r.responsavel).filter(Boolean)).size;
+
+  // Generate filename
+  const generateFilename = (ext: string) => {
+    let name = "historico_brindes";
+    if (filterMode === "month") name += `_${selectedMonth.replace("-", "_")}`;
+    else if (filterMode === "year") name += `_${selectedYear}`;
+    if (collaborator !== "all") name += `_colaborador_${collaborator.toLowerCase().replace(/\s+/g, "_")}`;
+    return `${name}.${ext}`;
+  };
+
+  const exportHeaders = ["Data", "Documento", "Evento", "Produto", "Quantidade", "Responsável", "Tipo", "Observações"];
+
+  const handleExportExcel = () => {
+    if (filteredRows.length === 0) return;
+    const csvRows = [exportHeaders.join(";")];
+    filteredRows.forEach((r) => {
+      csvRows.push([r.data, r.documento, r.evento, r.produto, r.quantidade, r.responsavel, r.tipo, r.observacoes].join(";"));
+    });
+    const bom = "\uFEFF";
+    const blob = new Blob([bom + csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = generateFilename("csv");
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportPDF = () => {
+    if (filteredRows.length === 0) return;
+    const doc = new jsPDF({ orientation: "landscape" });
+    doc.setFontSize(16);
+    doc.text("Histórico de Brindes", 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 14, 28);
+
+    autoTable(doc, {
+      startY: 35,
+      head: [exportHeaders],
+      body: filteredRows.map((r) => [r.data, r.documento, r.evento, r.produto, String(r.quantidade), r.responsavel, r.tipo, r.observacoes]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [59, 130, 246] },
+    });
+
+    doc.save(generateFilename("pdf"));
+  };
+
+  // Generate month options (last 24 months)
+  const monthOptions = useMemo(() => {
+    const opts = [];
+    const now = new Date();
+    for (let i = 0; i < 24; i++) {
+      const d = subMonths(now, i);
+      opts.push({ value: format(d, "yyyy-MM"), label: format(d, "MMMM yyyy", { locale: pt }) });
+    }
+    return opts;
+  }, []);
+
+  const yearOptions = useMemo(() => {
+    const now = new Date().getFullYear();
+    return Array.from({ length: 6 }, (_, i) => String(now - i));
+  }, []);
 
   return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-secondary/30">
-            <TableHead>Produto</TableHead>
-            <TableHead>Levantado</TableHead>
-            <TableHead>Devolvido</TableHead>
-            <TableHead>Consumo Real</TableHead>
-            <TableHead>Evento</TableHead>
-            <TableHead>Responsável</TableHead>
-            <TableHead>Data</TableHead>
-            <TableHead>Estado</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {concluidos.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
-                Sem histórico de pedidos concluídos.
-              </TableCell>
+    <div className="space-y-5">
+      {/* Summary cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+              <ClipboardList className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-xl font-bold text-foreground">{totalMovimentos}</p>
+              <p className="text-[11px] text-muted-foreground">Total Movimentos</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Package className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-xl font-bold text-foreground">{totalUnidades}</p>
+              <p className="text-[11px] text-muted-foreground">Total Unidades</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Users className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-xl font-bold text-foreground">{totalColaboradores}</p>
+              <p className="text-[11px] text-muted-foreground">Colaboradores Envolvidos</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters + Export */}
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="flex flex-wrap items-end gap-3">
+          {/* Filter mode */}
+          <div className="grid gap-1.5">
+            <Label className="text-xs text-muted-foreground">Filtrar por</Label>
+            <Select value={filterMode} onValueChange={(v) => setFilterMode(v as HistFilterMode)}>
+              <SelectTrigger className="w-[150px] h-9 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="month">Mês</SelectItem>
+                <SelectItem value="year">Ano</SelectItem>
+                <SelectItem value="range">Intervalo de Datas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {filterMode === "month" && (
+            <div className="grid gap-1.5">
+              <Label className="text-xs text-muted-foreground">Mês</Label>
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-[180px] h-9 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {monthOptions.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {filterMode === "year" && (
+            <div className="grid gap-1.5">
+              <Label className="text-xs text-muted-foreground">Ano</Label>
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="w-[120px] h-9 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {yearOptions.map((y) => (
+                    <SelectItem key={y} value={y}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {filterMode === "range" && (
+            <>
+              <div className="grid gap-1.5">
+                <Label className="text-xs text-muted-foreground">De</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn("h-9 text-xs gap-1 w-[140px] justify-start", !dateFrom && "text-muted-foreground")}>
+                      <CalendarIcon className="w-3.5 h-3.5" />
+                      {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "Selecionar"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} className="p-3 pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-xs text-muted-foreground">Até</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn("h-9 text-xs gap-1 w-[140px] justify-start", !dateTo && "text-muted-foreground")}>
+                      <CalendarIcon className="w-3.5 h-3.5" />
+                      {dateTo ? format(dateTo, "dd/MM/yyyy") : "Selecionar"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={dateTo} onSelect={setDateTo} className="p-3 pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </>
+          )}
+
+          {/* Collaborator filter */}
+          <div className="grid gap-1.5">
+            <Label className="text-xs text-muted-foreground">Colaborador</Label>
+            <Select value={collaborator} onValueChange={setCollaborator}>
+              <SelectTrigger className="w-[180px] h-9 text-xs">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {collaborators.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Export buttons */}
+          <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs" onClick={handleExportExcel} disabled={filteredRows.length === 0}>
+            <FileSpreadsheet className="w-3.5 h-3.5" /> Exportar Excel
+          </Button>
+          <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs" onClick={handleExportPDF} disabled={filteredRows.length === 0}>
+            <FileDown className="w-3.5 h-3.5" /> Exportar PDF
+          </Button>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-secondary/30">
+              <TableHead>Data</TableHead>
+              <TableHead>Documento</TableHead>
+              <TableHead>Evento</TableHead>
+              <TableHead>Produto</TableHead>
+              <TableHead>Quantidade</TableHead>
+              <TableHead>Responsável</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Observações</TableHead>
             </TableRow>
-          ) : concluidos.map((p) => (
-            <TableRow key={p.id} className="hover:bg-muted/30">
-              <TableCell className="font-medium text-foreground">{p.produtoNome}</TableCell>
-              <TableCell>{p.quantidadeLevantada}</TableCell>
-              <TableCell>{p.quantidadeDevolvida}</TableCell>
-              <TableCell className="font-semibold">{p.consumoReal}</TableCell>
-              <TableCell className="text-muted-foreground text-sm">{p.evento}</TableCell>
-              <TableCell className="text-muted-foreground text-sm">{p.responsavel}</TableCell>
-              <TableCell className="text-muted-foreground text-sm">{p.data}</TableCell>
-              <TableCell>
-                <Badge className="bg-green-100 text-green-700 border-0 text-[11px]">
-                  <CheckCircle2 className="w-3 h-3 mr-1" /> Concluído
-                </Badge>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {filteredRows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
+                  Sem histórico para o período selecionado.
+                </TableCell>
+              </TableRow>
+            ) : filteredRows.map((r, i) => (
+              <TableRow key={i} className="hover:bg-muted/30">
+                <TableCell className="text-muted-foreground text-sm">{r.data}</TableCell>
+                <TableCell className="font-medium text-foreground text-sm">{r.documento}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">{r.evento}</TableCell>
+                <TableCell className="text-foreground text-sm">{r.produto}</TableCell>
+                <TableCell className="font-semibold text-foreground">{r.quantidade}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">{r.responsavel}</TableCell>
+                <TableCell>
+                  <Badge className={cn("border-0 text-[11px]", r.tipo === "Pedido" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700")}>
+                    {r.tipo}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-muted-foreground text-xs max-w-[200px] truncate">{r.observacoes || "—"}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <p className="text-xs text-muted-foreground">{filteredRows.length} registo(s)</p>
     </div>
   );
 };
-
-// ─── MAIN PAGE ───
 const StockBrindes = ({ defaultTab = "overview" }: { defaultTab?: string }) => {
   return (
     <div className="p-8 animate-fade-in bg-background min-h-screen">
