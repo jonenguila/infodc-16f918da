@@ -24,8 +24,27 @@ interface StoredUser {
 
 const USERS_KEY = "erp_users";
 
+const DEFAULT_ADMIN: StoredUser = {
+  id: "admin-default",
+  nome: "Administrador",
+  email: "admin",
+  cargo: "Administrador do Sistema",
+  perfil: "Administrador",
+  password: "admin",
+};
+
 function getUsers(): StoredUser[] {
-  try { return JSON.parse(localStorage.getItem(USERS_KEY) || "[]"); } catch { return []; }
+  try {
+    const users: StoredUser[] = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
+    if (!users.some((u) => u.id === DEFAULT_ADMIN.id)) {
+      users.unshift(DEFAULT_ADMIN);
+      saveUsers(users);
+    }
+    return users;
+  } catch {
+    saveUsers([DEFAULT_ADMIN]);
+    return [DEFAULT_ADMIN];
+  }
 }
 
 function saveUsers(users: StoredUser[]) {
