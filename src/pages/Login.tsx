@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Info, LogIn, UserPlus, Eye, EyeOff } from "lucide-react";
+import { Info, LogIn, UserPlus, Eye, EyeOff, Loader2 } from "lucide-react";
 
 const Login = () => {
   const [isRegister, setIsRegister] = useState(false);
@@ -15,36 +15,43 @@ const Login = () => {
   const [cargo, setCargo] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login, register } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
-    if (isRegister) {
-      if (!nome.trim() || !email.trim() || !password.trim()) {
-        setError("Preencha todos os campos obrigatórios.");
-        return;
+    try {
+      if (isRegister) {
+        if (!nome.trim() || !email.trim() || !password.trim()) {
+          setError("Preencha todos os campos obrigatórios.");
+          setLoading(false);
+          return;
+        }
+        const res = await register({ nome, email, password, cargo });
+        if (res.success) navigate("/");
+        else setError(res.error || "Erro ao registar.");
+      } else {
+        if (!email.trim() || !password.trim()) {
+          setError("Preencha todos os campos.");
+          setLoading(false);
+          return;
+        }
+        const res = await login(email, password);
+        if (res.success) navigate("/");
+        else setError(res.error || "Erro ao entrar.");
       }
-      const res = register({ nome, email, password, cargo });
-      if (res.success) navigate("/");
-      else setError(res.error || "Erro ao registar.");
-    } else {
-      if (!email.trim() || !password.trim()) {
-        setError("Preencha todos os campos.");
-        return;
-      }
-      const res = login(email, password);
-      if (res.success) navigate("/");
-      else setError(res.error || "Erro ao entrar.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background px-4">
       <div className="w-full max-w-md animate-fade-in">
-        {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
           <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/20">
             <Info className="w-6 h-6 text-primary" />
@@ -80,8 +87,8 @@ const Login = () => {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Utilizador *</Label>
-                <Input id="email" type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nome de utilizador ou email" />
+                <Label htmlFor="email">Email *</Label>
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="exemplo@email.com" />
               </div>
 
               <div className="space-y-2">
@@ -109,8 +116,8 @@ const Login = () => {
                 <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</p>
               )}
 
-              <Button type="submit" className="w-full gap-2">
-                {isRegister ? <UserPlus className="w-4 h-4" /> : <LogIn className="w-4 h-4" />}
+              <Button type="submit" className="w-full gap-2" disabled={loading}>
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : isRegister ? <UserPlus className="w-4 h-4" /> : <LogIn className="w-4 h-4" />}
                 {isRegister ? "Criar Conta" : "Entrar"}
               </Button>
             </form>
@@ -128,7 +135,7 @@ const Login = () => {
         </Card>
 
         <p className="text-xs text-muted-foreground text-center mt-6">
-          Autenticação simulada — dados guardados localmente
+          Autenticação segura — dados persistentes na cloud
         </p>
       </div>
     </div>

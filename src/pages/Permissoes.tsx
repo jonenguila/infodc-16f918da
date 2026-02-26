@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Shield, ShieldCheck, ShieldAlert, Edit, Save, Trash2 } from "lucide-react";
+import { Search, Shield, ShieldCheck, ShieldAlert, Edit, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,18 +15,29 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import type { Perfil } from "@/lib/permissions";
 
-const USERS_KEY = "erp_users";
-
-interface StoredUser {
+interface UserWithRole {
   id: string;
+  user_id: string;
   nome: string;
   email: string;
   cargo?: string;
   perfil: Perfil;
-  password: string;
 }
+
+const roleToPerfilMap: Record<string, Perfil> = {
+  admin: "Administrador",
+  gestor: "Gestor",
+  utilizador: "Utilizador",
+};
+
+const perfilToRoleMap: Record<Perfil, string> = {
+  Administrador: "admin",
+  Gestor: "gestor",
+  Utilizador: "utilizador",
+};
 
 const allPermissoes = [
   "Ver Produtos", "Editar Produtos", "Criar Pedidos", "Aprovar Pedidos",
@@ -44,30 +55,41 @@ function saveUserPermissions(data: Record<string, string[]>) {
   localStorage.setItem(PERMISSIONS_KEY, JSON.stringify(data));
 }
 
-function getUsers(): StoredUser[] {
-  try { return JSON.parse(localStorage.getItem(USERS_KEY) || "[]"); } catch { return []; }
-}
-
-function saveUsers(users: StoredUser[]) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
 const Permissoes = () => {
   const { user: currentUser } = useAuth();
   const [search, setSearch] = useState("");
-  const [users, setUsers] = useState<StoredUser[]>([]);
+  const [users, setUsers] = useState<UserWithRole[]>([]);
+  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editUser, setEditUser] = useState<StoredUser | null>(null);
+  const [editUser, setEditUser] = useState<UserWithRole | null>(null);
   const [formPerfil, setFormPerfil] = useState<Perfil>("Utilizador");
   const [formPermissoes, setFormPermissoes] = useState<string[]>([]);
   const [userPermissions, setUserPermissions] = useState<Record<string, string[]>>({});
 
-  const refresh = () => {
-    setUsers(getUsers());
+  const fetchUsers = async () => {
+    setLoading(true);
+    const { data: profiles } = await supabase.from("profiles").select("*");
+    const { data: roles } = await supabase.from("user_roles").select("*");
+
+    if (profiles) {
+      const usersWithRoles: UserWithRole[] = profiles.map((p: any) => {
+        const userRole = roles?.find((r: any) => r.user_id === p.user_id);
+        return {
+          id: p.id,
+          user_id: p.user_id,
+          nome: p.nome,
+          email: p.email,
+          cargo: p.cargo || undefined,
+          perfil: roleToPerfilMap[userRole?.role || "utilizador"] || "Utilizador",
+        };
+      });
+      setUsers(usersWithRoles);
+    }
     setUserPermissions(getUserPermissions());
+    setLoading(false);
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => { fetchUsers(); }, []);
 
   const filtered = users.filter((u) =>
     u.nome.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
@@ -80,10 +102,10 @@ const Permissoes = () => {
     return ["Ver Produtos", "Criar Pedidos"];
   };
 
-  const openEdit = (user: StoredUser) => {
+  const openEdit = (user: UserWithRole) => {
     setEditUser(user);
     setFormPerfil(user.perfil);
-    setFormPermissoes(getPermissionsForUser(user.id, user.perfil));
+    setFormPermissoes(getPermissionsForUser(user.user_id, user.perfil));
     setDialogOpen(true);
   };
 
@@ -91,28 +113,20 @@ const Permissoes = () => {
     setFormPermissoes((prev) => prev.includes(perm) ? prev.filter((p) => p !== perm) : [...prev, perm]);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editUser) return;
-    // Update perfil in users
-    const all = getUsers();
-    saveUsers(all.map((u) => u.id === editUser.id ? { ...u, perfil: formPerfil } : u));
-    // Save permissions
+    // Update role in database
+    await supabase
+      .from("user_roles")
+      .update({ role: perfilToRoleMap[formPerfil] as any })
+      .eq("user_id", editUser.user_id);
+    // Save granular permissions locally (could be migrated to DB later)
     const perms = getUserPermissions();
-    perms[editUser.id] = formPermissoes;
+    perms[editUser.user_id] = formPermissoes;
     saveUserPermissions(perms);
-    refresh();
+    await fetchUsers();
     setDialogOpen(false);
     toast.success("Permissões guardadas com sucesso");
-  };
-
-  const handleDelete = (user: StoredUser) => {
-    if (user.id === currentUser?.id) {
-      toast.error("Não pode eliminar o seu próprio utilizador");
-      return;
-    }
-    saveUsers(getUsers().filter((u) => u.id !== user.id));
-    refresh();
-    toast.success(`Utilizador ${user.nome} eliminado`);
   };
 
   const getPerfilIcon = (perfil: string) => {
@@ -120,6 +134,14 @@ const Permissoes = () => {
     if (perfil === "Gestor") return <ShieldCheck className="w-4 h-4 text-primary" />;
     return <Shield className="w-4 h-4 text-muted-foreground" />;
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 animate-fade-in">
@@ -136,7 +158,7 @@ const Permissoes = () => {
       {users.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <Shield className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p>Nenhum utilizador registado. Crie utilizadores na Gestão de Utilizadores.</p>
+          <p>Nenhum utilizador registado.</p>
         </div>
       ) : (
         <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -163,25 +185,13 @@ const Permissoes = () => {
                   </TableCell>
                   <TableCell>
                     <span className="text-xs text-muted-foreground">
-                      {getPermissionsForUser(user.id, user.perfil).length} permissões
+                      {getPermissionsForUser(user.user_id, user.perfil).length} permissões
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(user)} title="Editar permissões">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => handleDelete(user)}
-                        disabled={user.id === currentUser?.id}
-                        title="Eliminar utilizador"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(user)} title="Editar permissões">
+                      <Edit className="w-4 h-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

@@ -1,121 +1,140 @@
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Shield, Save, KeyRound } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Trash2, Shield, KeyRound, Loader2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import type { Perfil } from "@/lib/permissions";
 import { isPasswordValid } from "@/lib/passwordValidation";
 import { PasswordStrength } from "@/components/PasswordStrength";
 
-interface StoredUser {
+interface UserWithRole {
   id: string;
+  user_id: string;
   nome: string;
   email: string;
   cargo?: string;
   perfil: Perfil;
-  password: string;
 }
 
-const USERS_KEY = "erp_users";
-
-const DEFAULT_ADMIN: StoredUser = {
-  id: "admin-default",
-  nome: "Administrador",
-  email: "admin",
-  cargo: "Administrador do Sistema",
-  perfil: "Administrador",
-  password: "admin",
+const roleToPerfilMap: Record<string, Perfil> = {
+  admin: "Administrador",
+  gestor: "Gestor",
+  utilizador: "Utilizador",
 };
 
-function getUsers(): StoredUser[] {
-  try {
-    const users: StoredUser[] = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-    if (!users.some((u) => u.id === DEFAULT_ADMIN.id)) {
-      users.unshift(DEFAULT_ADMIN);
-      saveUsers(users);
-    }
-    return users;
-  } catch {
-    saveUsers([DEFAULT_ADMIN]);
-    return [DEFAULT_ADMIN];
-  }
-}
-
-function saveUsers(users: StoredUser[]) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
-const perfilColors: Record<string, string> = {
-  Administrador: "bg-red-100 text-red-700",
-  Gestor: "bg-blue-100 text-blue-700",
-  Utilizador: "bg-green-100 text-green-700",
+const perfilToRoleMap: Record<Perfil, string> = {
+  Administrador: "admin",
+  Gestor: "gestor",
+  Utilizador: "utilizador",
 };
 
 const GestaoUtilizadores = () => {
   const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState<StoredUser[]>([]);
+  const [users, setUsers] = useState<UserWithRole[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ nome: "", email: "", cargo: "", perfil: "Utilizador" as Perfil, password: "" });
-  const [resetUser, setResetUser] = useState<StoredUser | null>(null);
-  const [newPassword, setNewPassword] = useState("");
 
-  useEffect(() => { setUsers(getUsers()); }, []);
+  const fetchUsers = async () => {
+    setLoading(true);
+    const { data: profiles } = await supabase.from("profiles").select("*");
+    const { data: roles } = await supabase.from("user_roles").select("*");
 
-  const refresh = () => setUsers(getUsers());
+    if (profiles) {
+      const usersWithRoles: UserWithRole[] = profiles.map((p: any) => {
+        const userRole = roles?.find((r: any) => r.user_id === p.user_id);
+        return {
+          id: p.id,
+          user_id: p.user_id,
+          nome: p.nome,
+          email: p.email,
+          cargo: p.cargo || undefined,
+          perfil: roleToPerfilMap[userRole?.role || "utilizador"] || "Utilizador",
+        };
+      });
+      setUsers(usersWithRoles);
+    }
+    setLoading(false);
+  };
 
-  const handleCreate = () => {
+  useEffect(() => { fetchUsers(); }, []);
+
+  const handleCreate = async () => {
     if (!form.nome || !form.email || !form.password) return;
     if (!isPasswordValid(form.password)) {
       toast.error("A palavra-passe não cumpre os requisitos de segurança");
       return;
     }
-    const all = getUsers();
-    if (all.some((u) => u.email === form.email)) {
-      toast.error("Este utilizador já existe");
-      return;
+    setCreating(true);
+    try {
+      // Sign up new user via edge function or direct auth
+      const { data, error } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: { data: { nome: form.nome } },
+      });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      if (data.user) {
+        // Update cargo if provided
+        if (form.cargo) {
+          await supabase.from("profiles").update({ cargo: form.cargo }).eq("user_id", data.user.id);
+        }
+        // Update role if not default
+        if (form.perfil !== "Utilizador") {
+          await supabase.from("user_roles").update({ role: perfilToRoleMap[form.perfil] as any }).eq("user_id", data.user.id);
+        }
+      }
+      await fetchUsers();
+      setShowNew(false);
+      setForm({ nome: "", email: "", cargo: "", perfil: "Utilizador", password: "" });
+      toast.success("Utilizador criado com sucesso");
+    } finally {
+      setCreating(false);
     }
-    const newUser: StoredUser = { id: crypto.randomUUID(), ...form };
-    saveUsers([...all, newUser]);
-    refresh();
-    setShowNew(false);
-    setForm({ nome: "", email: "", cargo: "", perfil: "Utilizador", password: "" });
-    toast.success("Utilizador criado com sucesso");
   };
 
-  const handleUpdatePerfil = (id: string, perfil: Perfil) => {
-    const all = getUsers();
-    saveUsers(all.map((u) => (u.id === id ? { ...u, perfil } : u)));
-    refresh();
+  const handleUpdatePerfil = async (userId: string, perfil: Perfil) => {
+    const { error } = await supabase
+      .from("user_roles")
+      .update({ role: perfilToRoleMap[perfil] as any })
+      .eq("user_id", userId);
+    if (error) {
+      toast.error("Erro ao atualizar perfil");
+      return;
+    }
+    await fetchUsers();
     toast.success("Perfil atualizado com sucesso");
   };
 
-  const handleDelete = (id: string) => {
-    if (id === currentUser?.id) return;
-    saveUsers(getUsers().filter((u) => u.id !== id));
-    refresh();
+  const handleDelete = async (userId: string) => {
+    if (userId === currentUser?.user_id) return;
+    // Delete profile (cascade will handle user_roles)
+    const { error } = await supabase.from("profiles").delete().eq("user_id", userId);
+    if (error) {
+      toast.error("Erro ao eliminar utilizador");
+      return;
+    }
+    await fetchUsers();
     toast.success("Utilizador eliminado");
   };
 
-  const handleResetPassword = () => {
-    if (!resetUser || !newPassword) return;
-    if (!isPasswordValid(newPassword)) {
-      toast.error("A palavra-passe não cumpre os requisitos de segurança");
-      return;
-    }
-    const all = getUsers();
-    saveUsers(all.map((u) => (u.id === resetUser.id ? { ...u, password: newPassword } : u)));
-    refresh();
-    setResetUser(null);
-    setNewPassword("");
-    toast.success("Palavra-passe redefinida com sucesso");
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 animate-fade-in">
@@ -132,7 +151,7 @@ const GestaoUtilizadores = () => {
             <DialogHeader><DialogTitle>Criar Utilizador</DialogTitle></DialogHeader>
             <div className="space-y-4 mt-4">
               <div className="space-y-2"><Label>Nome *</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
-              <div className="space-y-2"><Label>Utilizador / Email *</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Email *</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="exemplo@email.com" /></div>
               <div className="space-y-2">
                 <Label>Palavra-passe *</Label>
                 <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
@@ -150,7 +169,10 @@ const GestaoUtilizadores = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={handleCreate} disabled={!form.nome || !form.email || !isPasswordValid(form.password)} className="w-full">Criar</Button>
+              <Button onClick={handleCreate} disabled={!form.nome || !form.email || !isPasswordValid(form.password) || creating} className="w-full">
+                {creating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Criar
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -170,7 +192,7 @@ const GestaoUtilizadores = () => {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Select value={u.perfil} onValueChange={(v) => handleUpdatePerfil(u.id, v as Perfil)}>
+                <Select value={u.perfil} onValueChange={(v) => handleUpdatePerfil(u.user_id, v as Perfil)}>
                   <SelectTrigger className="w-36 h-8">
                     <div className="flex items-center gap-2">
                       <Shield className="w-3.5 h-3.5" />
@@ -186,18 +208,9 @@ const GestaoUtilizadores = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-muted-foreground hover:text-accent-foreground"
-                  onClick={() => { setResetUser(u); setNewPassword(""); }}
-                  title="Redefinir palavra-passe"
-                >
-                  <KeyRound className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
                   className="text-muted-foreground hover:text-destructive"
-                  onClick={() => handleDelete(u.id)}
-                  disabled={u.id === currentUser?.id}
+                  onClick={() => handleDelete(u.user_id)}
+                  disabled={u.user_id === currentUser?.user_id}
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
@@ -206,25 +219,6 @@ const GestaoUtilizadores = () => {
           </Card>
         ))}
       </div>
-      <Dialog open={!!resetUser} onOpenChange={(open) => { if (!open) { setResetUser(null); setNewPassword(""); } }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Redefinir Palavra-passe</DialogTitle>
-            <DialogDescription>Introduza a nova palavra-passe para {resetUser?.nome}.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label>Nova Palavra-passe *</Label>
-              <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Nova palavra-passe" />
-              <PasswordStrength password={newPassword} />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => { setResetUser(null); setNewPassword(""); }}>Cancelar</Button>
-              <Button onClick={handleResetPassword} disabled={!isPasswordValid(newPassword)}>Redefinir</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
