@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
-  Package, Wrench, FolderKanban, Box, Shield,
+  Package, Wrench, FolderKanban, Box,
   ClipboardList, Users, Megaphone, Newspaper,
   ChevronDown, Info, ShieldCheck, List,
   FileSpreadsheet, LogOut, LayoutDashboard,
   ChevronsLeft, ChevronsRight, BarChart3, History, RotateCcw, FilePlus2,
-  Tag, MapPin, DatabaseBackup,
+  Tag, MapPin, DatabaseBackup, Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
