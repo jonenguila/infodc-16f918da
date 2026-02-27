@@ -41,6 +41,32 @@ const GestaoUtilizadores = () => {
   const [showNew, setShowNew] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ nome: "", email: "", cargo: "", perfil: "Utilizador" as Perfil, password: "" });
+  const [resetTarget, setResetTarget] = useState<UserWithRole | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [resetting, setResetting] = useState(false);
+
+  const handleResetPassword = async () => {
+    if (!resetTarget || !newPassword) return;
+    if (!isPasswordValid(newPassword)) {
+      toast.error("A palavra-passe não cumpre os requisitos de segurança");
+      return;
+    }
+    setResetting(true);
+    try {
+      const res = await supabase.functions.invoke("admin-reset-password", {
+        body: { user_id: resetTarget.user_id, new_password: newPassword },
+      });
+      if (res.error || res.data?.error) {
+        toast.error(res.data?.error || res.error?.message || "Erro ao redefinir palavra-passe");
+        return;
+      }
+      toast.success(`Palavra-passe de ${resetTarget.nome} redefinida com sucesso`);
+      setResetTarget(null);
+      setNewPassword("");
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -202,6 +228,15 @@ const GestaoUtilizadores = () => {
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="text-muted-foreground hover:text-primary"
+                  onClick={() => { setResetTarget(u); setNewPassword(""); }}
+                  title="Redefinir palavra-passe"
+                >
+                  <KeyRound className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="text-muted-foreground hover:text-destructive"
                   onClick={() => handleDelete(u.user_id)}
                   disabled={u.user_id === currentUser?.user_id}
@@ -213,6 +248,29 @@ const GestaoUtilizadores = () => {
           </Card>
         ))}
       </div>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={!!resetTarget} onOpenChange={(open) => { if (!open) setResetTarget(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Redefinir Palavra-passe</DialogTitle>
+            <DialogDescription>
+              Definir nova palavra-passe para {resetTarget?.nome} ({resetTarget?.email})
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label>Nova palavra-passe *</Label>
+              <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+              <PasswordStrength password={newPassword} />
+            </div>
+            <Button onClick={handleResetPassword} disabled={!isPasswordValid(newPassword) || resetting} className="w-full">
+              {resetting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Redefinir
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
