@@ -15,7 +15,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Responsive
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 import { useStockStore } from "@/stores/stockStore";
-import { useBackupReminder } from "@/lib/backupUtils";
+
 
 type FilterMode = "month" | "year" | "range";
 type ChartType = "bar" | "line";
@@ -30,7 +30,7 @@ const chartConfig = {
 
 const Dashboard = () => {
   const { pedidos, produtos, movimentos } = useStockStore();
-  useBackupReminder();
+  
 
   const stockTotal = produtos.reduce((sum, p) => sum + p.stockAtual, 0);
   const pedidosPendentes = pedidos.filter((p) => p.estado === "Pendente" || p.estado === "Em Preparação" || p.estado === "Aprovado");
