@@ -140,14 +140,19 @@ const GestaoUtilizadores = () => {
 
   const handleDelete = async (userId: string) => {
     if (userId === currentUser?.user_id) return;
-    // Delete profile (cascade will handle user_roles)
-    const { error } = await supabase.from("profiles").delete().eq("user_id", userId);
-    if (error) {
+    try {
+      const res = await supabase.functions.invoke("admin-delete-user", {
+        body: { user_id: userId },
+      });
+      if (res.error || res.data?.error) {
+        toast.error(res.data?.error || res.error?.message || "Erro ao eliminar utilizador");
+        return;
+      }
+      await fetchUsers();
+      toast.success("Utilizador eliminado completamente");
+    } catch {
       toast.error("Erro ao eliminar utilizador");
-      return;
     }
-    await fetchUsers();
-    toast.success("Utilizador eliminado");
   };
 
   if (loading) {

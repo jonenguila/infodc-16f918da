@@ -64,7 +64,7 @@ const StockDevolucao = () => {
     setQuantidade(1);
   };
 
-  const removerProduto = (produtoId: number) => {
+  const removerProduto = (produtoId: string) => {
     setProdutosDevolucao((prev) => prev.filter((pp) => pp.produtoId !== produtoId));
   };
 
@@ -75,13 +75,13 @@ const StockDevolucao = () => {
     setTentouSubmeter(false);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setTentouSubmeter(true);
     if (!camposValidos) {
       toast({ title: "Campos obrigatórios", description: "Preencha todos os campos obrigatórios (*) e adicione pelo menos um produto.", variant: "destructive" });
       return;
     }
-    registarDocumentoDevolucao({
+    await registarDocumentoDevolucao({
       nome,
       nomeEvento,
       dataEntrega: dataEntrega!.toISOString().slice(0, 10),

@@ -193,8 +193,8 @@ const StockTab = () => {
     e.target.value = "";
   };
 
-  const handleAddProduct = () => {
-    const err = adicionarProduto(newNome, newTipologia, newLocalizacao, Number(newStock) || 0, Number(newMinimo) || 40);
+  const handleAddProduct = async () => {
+    const err = await adicionarProduto(newNome, newTipologia, newLocalizacao, Number(newStock) || 0, Number(newMinimo) || 40);
     if (err) {
       toast({ title: "Erro", description: err, variant: "destructive" });
       return;
@@ -451,7 +451,7 @@ const PedidosAtivosTab = () => {
 
   const [levDialog, setLevDialog] = useState(false);
   const [devDialog, setDevDialog] = useState(false);
-  const [devPedidoId, setDevPedidoId] = useState<number | null>(null);
+  const [devPedidoId, setDevPedidoId] = useState<string | null>(null);
 
   const [levProduto, setLevProduto] = useState("");
   const [levQtd, setLevQtd] = useState("");
@@ -464,8 +464,8 @@ const PedidosAtivosTab = () => {
 
   const pedidosAtivos = pedidosLevantamento.filter((p) => p.estado === "Ativo");
 
-  const handleLevantamento = () => {
-    const err = criarLevantamento(Number(levProduto), Number(levQtd), levResp, levEvento, levData);
+  const handleLevantamento = async () => {
+    const err = await criarLevantamento(levProduto, Number(levQtd), levResp, levEvento, levData);
     if (err) {
       toast({ title: "Erro", description: err, variant: "destructive" });
       return;
@@ -475,9 +475,9 @@ const PedidosAtivosTab = () => {
     setLevProduto(""); setLevQtd(""); setLevEvento(""); setLevResp("");
   };
 
-  const handleDevolucao = () => {
+  const handleDevolucao = async () => {
     if (devPedidoId === null) return;
-    const err = registarDevolucao(devPedidoId, Number(devQtd), devData);
+    const err = await registarDevolucao(devPedidoId, Number(devQtd), devData);
     if (err) {
       toast({ title: "Erro", description: err, variant: "destructive" });
       return;
@@ -487,7 +487,7 @@ const PedidosAtivosTab = () => {
     setDevQtd("");
   };
 
-  const openDevolucao = (pedidoId: number) => {
+  const openDevolucao = (pedidoId: string) => {
     setDevPedidoId(pedidoId);
     setDevQtd("");
     setDevData(new Date().toISOString().slice(0, 10));
@@ -1039,7 +1039,7 @@ const TodosPedidosTab = () => {
       const q = search.toLowerCase();
       return !q || (p.numero || "").toLowerCase().includes(q) || p.nomeEvento.toLowerCase().includes(q) || p.nomeRequisitante.toLowerCase().includes(q);
     })
-    .sort((a, b) => b.id - a.id);
+    .sort((a, b) => a.id < b.id ? 1 : -1);
 
   return (
     <div className="space-y-4">

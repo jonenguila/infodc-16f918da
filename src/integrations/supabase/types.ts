@@ -47,6 +47,286 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_config: {
+        Row: {
+          key: string
+          value: number
+        }
+        Insert: {
+          key: string
+          value?: number
+        }
+        Update: {
+          key?: string
+          value?: number
+        }
+        Relationships: []
+      }
+      stock_documentos_devolucao: {
+        Row: {
+          created_at: string
+          data_entrega: string
+          id: string
+          nome: string
+          nome_evento: string | null
+          observacoes: string | null
+          produtos: Json
+          responsavel: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_entrega: string
+          id?: string
+          nome: string
+          nome_evento?: string | null
+          observacoes?: string | null
+          produtos?: Json
+          responsavel?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_entrega?: string
+          id?: string
+          nome?: string
+          nome_evento?: string | null
+          observacoes?: string | null
+          produtos?: Json
+          responsavel?: string | null
+        }
+        Relationships: []
+      }
+      stock_localizacoes: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      stock_movimentos: {
+        Row: {
+          created_at: string
+          data: string
+          evento: string | null
+          id: string
+          produto_id: string | null
+          produto_nome: string
+          quantidade: number
+          responsavel: string | null
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          evento?: string | null
+          id?: string
+          produto_id?: string | null
+          produto_nome: string
+          quantidade: number
+          responsavel?: string | null
+          tipo: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          evento?: string | null
+          id?: string
+          produto_id?: string | null
+          produto_nome?: string
+          quantidade?: number
+          responsavel?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movimentos_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "stock_produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_pedidos: {
+        Row: {
+          criado_em: string
+          data_evento: string | null
+          data_pedido: string
+          data_recolha: string | null
+          descricao_destino: string | null
+          destino: string | null
+          email: string
+          estado: string
+          id: string
+          nome_evento: string | null
+          nome_requisitante: string
+          numero: string
+          observacoes: string | null
+          origem: string | null
+          prioridade: string
+          produtos: Json
+          responsavel_levantamento: string | null
+          tipo_evento: string | null
+        }
+        Insert: {
+          criado_em?: string
+          data_evento?: string | null
+          data_pedido: string
+          data_recolha?: string | null
+          descricao_destino?: string | null
+          destino?: string | null
+          email: string
+          estado?: string
+          id?: string
+          nome_evento?: string | null
+          nome_requisitante: string
+          numero: string
+          observacoes?: string | null
+          origem?: string | null
+          prioridade?: string
+          produtos?: Json
+          responsavel_levantamento?: string | null
+          tipo_evento?: string | null
+        }
+        Update: {
+          criado_em?: string
+          data_evento?: string | null
+          data_pedido?: string
+          data_recolha?: string | null
+          descricao_destino?: string | null
+          destino?: string | null
+          email?: string
+          estado?: string
+          id?: string
+          nome_evento?: string | null
+          nome_requisitante?: string
+          numero?: string
+          observacoes?: string | null
+          origem?: string | null
+          prioridade?: string
+          produtos?: Json
+          responsavel_levantamento?: string | null
+          tipo_evento?: string | null
+        }
+        Relationships: []
+      }
+      stock_pedidos_levantamento: {
+        Row: {
+          consumo_real: number
+          created_at: string
+          data: string
+          estado: string
+          evento: string | null
+          id: string
+          produto_id: string | null
+          produto_nome: string
+          quantidade_devolvida: number
+          quantidade_levantada: number
+          responsavel: string | null
+        }
+        Insert: {
+          consumo_real?: number
+          created_at?: string
+          data: string
+          estado?: string
+          evento?: string | null
+          id?: string
+          produto_id?: string | null
+          produto_nome: string
+          quantidade_devolvida?: number
+          quantidade_levantada?: number
+          responsavel?: string | null
+        }
+        Update: {
+          consumo_real?: number
+          created_at?: string
+          data?: string
+          estado?: string
+          evento?: string | null
+          id?: string
+          produto_id?: string | null
+          produto_nome?: string
+          quantidade_devolvida?: number
+          quantidade_levantada?: number
+          responsavel?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_pedidos_levantamento_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "stock_produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_produtos: {
+        Row: {
+          created_at: string
+          id: string
+          localizacao: string | null
+          nome: string
+          stock_atual: number
+          stock_minimo: number
+          tipologia: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          localizacao?: string | null
+          nome: string
+          stock_atual?: number
+          stock_minimo?: number
+          tipologia?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          localizacao?: string | null
+          nome?: string
+          stock_atual?: number
+          stock_minimo?: number
+          tipologia?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stock_tipologias: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

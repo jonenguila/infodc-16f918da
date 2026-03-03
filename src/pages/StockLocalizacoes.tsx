@@ -16,7 +16,7 @@ const StockLocalizacoes = () => {
   const { localizacoes, adicionarLocalizacao, editarLocalizacao, eliminarLocalizacao } = useStockStore();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ nome: "", descricao: "" });
 
   const openNew = () => {
@@ -25,27 +25,27 @@ const StockLocalizacoes = () => {
     setDialogOpen(true);
   };
 
-  const openEdit = (l: { id: number; nome: string; descricao: string }) => {
+  const openEdit = (l: { id: string; nome: string; descricao: string }) => {
     setEditingId(l.id);
     setFormData({ nome: l.nome, descricao: l.descricao });
     setDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.nome.trim()) return;
     if (editingId !== null) {
-      editarLocalizacao(editingId, formData.nome, formData.descricao);
+      await editarLocalizacao(editingId, formData.nome, formData.descricao);
       toast({ title: "Localização atualizada" });
     } else {
-      const err = adicionarLocalizacao(formData.nome, formData.descricao);
+      const err = await adicionarLocalizacao(formData.nome, formData.descricao);
       if (err) { toast({ title: "Erro", description: err, variant: "destructive" }); return; }
       toast({ title: "Localização criada" });
     }
     setDialogOpen(false);
   };
 
-  const handleDelete = (id: number) => {
-    eliminarLocalizacao(id);
+  const handleDelete = async (id: string) => {
+    await eliminarLocalizacao(id);
     toast({ title: "Localização eliminada" });
   };
 

@@ -24,7 +24,7 @@ const tiposEvento = ["Conferência", "Workshop", "Feira", "Formação", "Evento 
 const prioridades: Array<"Baixa" | "Média" | "Alta" | "Urgente"> = ["Baixa", "Média", "Alta", "Urgente"];
 
 interface ProdutoPedido {
-  produtoId: number;
+  produtoId: string;
   produtoNome: string;
   stock: number;
   quantidade: number;
@@ -74,7 +74,7 @@ const NovoPedido = () => {
     setQuantidade(1);
   };
 
-  const removerProduto = (produtoId: number) => {
+  const removerProduto = (produtoId: string) => {
     setProdutosPedido((prev) => prev.filter((pp) => pp.produtoId !== produtoId));
   };
 
@@ -88,14 +88,14 @@ const NovoPedido = () => {
 
   const camposValidos = dataPedido && nomeRequisitante && email && tipoEvento && nomeEvento && dataEvento && dataRecolha && responsavelLevantamento && prioridade && produtosPedido.length > 0;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setTentouSubmeter(true);
     if (!camposValidos) {
       toast({ title: "Campos obrigatórios", description: "Preencha todos os campos obrigatórios (*) e adicione pelo menos um produto.", variant: "destructive" });
       return;
     }
 
-    const err = criarPedido({
+    const err = await criarPedido({
       dataPedido: dataPedido!.toISOString(),
       nomeRequisitante,
       email,

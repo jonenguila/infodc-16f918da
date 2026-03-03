@@ -16,7 +16,7 @@ const StockCategorias = () => {
   const { tipologias, adicionarTipologia, editarTipologia, eliminarTipologia } = useStockStore();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ nome: "", descricao: "" });
 
   const openNew = () => {
@@ -25,27 +25,27 @@ const StockCategorias = () => {
     setDialogOpen(true);
   };
 
-  const openEdit = (t: { id: number; nome: string; descricao: string }) => {
+  const openEdit = (t: { id: string; nome: string; descricao: string }) => {
     setEditingId(t.id);
     setFormData({ nome: t.nome, descricao: t.descricao });
     setDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.nome.trim()) return;
     if (editingId !== null) {
-      editarTipologia(editingId, formData.nome, formData.descricao);
+      await editarTipologia(editingId, formData.nome, formData.descricao);
       toast({ title: "Tipologia atualizada" });
     } else {
-      const err = adicionarTipologia(formData.nome, formData.descricao);
+      const err = await adicionarTipologia(formData.nome, formData.descricao);
       if (err) { toast({ title: "Erro", description: err, variant: "destructive" }); return; }
       toast({ title: "Tipologia criada" });
     }
     setDialogOpen(false);
   };
 
-  const handleDelete = (id: number) => {
-    eliminarTipologia(id);
+  const handleDelete = async (id: string) => {
+    await eliminarTipologia(id);
     toast({ title: "Tipologia eliminada" });
   };
 

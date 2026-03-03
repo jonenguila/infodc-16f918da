@@ -1,7 +1,8 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Produto {
-  id: number;
+  id: string;
   nome: string;
   tipologia: string;
   localizacao: string;
@@ -10,20 +11,20 @@ export interface Produto {
 }
 
 export interface Tipologia {
-  id: number;
+  id: string;
   nome: string;
   descricao: string;
 }
 
 export interface Localizacao {
-  id: number;
+  id: string;
   nome: string;
   descricao: string;
 }
 
 export interface Movimento {
-  id: number;
-  produtoId: number;
+  id: string;
+  produtoId: string | null;
   produtoNome: string;
   tipo: "levantamento" | "devolucao";
   quantidade: number;
@@ -33,13 +34,13 @@ export interface Movimento {
 }
 
 export interface PedidoProduto {
-  produtoId: number;
+  produtoId: string;
   produtoNome: string;
   quantidade: number;
 }
 
 export interface Pedido {
-  id: number;
+  id: string;
   numero: string;
   dataPedido: string;
   nomeRequisitante: string;
@@ -60,8 +61,8 @@ export interface Pedido {
 }
 
 export interface PedidoLevantamento {
-  id: number;
-  produtoId: number;
+  id: string;
+  produtoId: string | null;
   produtoNome: string;
   quantidadeLevantada: number;
   quantidadeDevolvida: number;
@@ -73,13 +74,13 @@ export interface PedidoLevantamento {
 }
 
 export interface ProdutoDevolucaoDoc {
-  produtoId: number;
+  produtoId: string;
   produtoNome: string;
   quantidade: number;
 }
 
 export interface DocumentoDevolucao {
-  id: number;
+  id: string;
   nome: string;
   nomeEvento: string;
   dataEntrega: string;
@@ -90,65 +91,90 @@ export interface DocumentoDevolucao {
 
 const DEFAULT_STOCK_MINIMO = 40;
 
-const produtosIniciais: Produto[] = [
-  { id: 1, nome: "Caneta Data CoLAB", tipologia: "Escritório", localizacao: "Sede", stockAtual: 150, stockMinimo: 40 },
-  { id: 2, nome: "Bloco de Notas A5", tipologia: "Escritório", localizacao: "Sede", stockAtual: 45, stockMinimo: 40 },
-  { id: 3, nome: "Mochila Corporativa", tipologia: "Vestuário", localizacao: "Armazém", stockAtual: 12, stockMinimo: 40 },
-  { id: 4, nome: "T-Shirt Data CoLAB", tipologia: "Vestuário", localizacao: "Armazém", stockAtual: 0, stockMinimo: 40 },
-  { id: 5, nome: "Garrafa Termos", tipologia: "Lifestyle", localizacao: "Sede", stockAtual: 25, stockMinimo: 40 },
-  { id: 6, nome: "Pen USB 32GB", tipologia: "Tecnologia", localizacao: "Sede", stockAtual: 8, stockMinimo: 40 },
-  { id: 7, nome: "Tote Bag", tipologia: "Lifestyle", localizacao: "Armazém", stockAtual: 0, stockMinimo: 40 },
-  { id: 8, nome: "Calendário 2025", tipologia: "Escritório", localizacao: "Sede", stockAtual: 60, stockMinimo: 40 },
-];
+// Module-level cache
+let _produtos: Produto[] = [];
+let _tipologias: Tipologia[] = [];
+let _localizacoes: Localizacao[] = [];
+let _movimentos: Movimento[] = [];
+let _pedidos: Pedido[] = [];
+let _pedidosLevantamento: PedidoLevantamento[] = [];
+let _documentosDevolucao: DocumentoDevolucao[] = [];
+let _loading = true;
+let _initialized = false;
+let _listeners: (() => void)[] = [];
 
-const tipologiasIniciais: Tipologia[] = [
-  { id: 1, nome: "Escritório", descricao: "Material de escritório e papelaria" },
-  { id: 2, nome: "Vestuário", descricao: "Roupa e acessórios corporativos" },
-  { id: 3, nome: "Lifestyle", descricao: "Artigos de lifestyle e bem-estar" },
-  { id: 4, nome: "Tecnologia", descricao: "Gadgets e acessórios tecnológicos" },
-];
-
-const localizacoesIniciais: Localizacao[] = [
-  { id: 1, nome: "Sede", descricao: "Escritório principal" },
-  { id: 2, nome: "Armazém", descricao: "Armazém central de stock" },
-];
-
-// --- localStorage persistence ---
-const STORAGE_KEY = "erp_stock_data";
-
-interface StoreState {
-  produtos: Produto[];
-  tipologias: Tipologia[];
-  localizacoes: Localizacao[];
-  movimentos: Movimento[];
-  pedidos: Pedido[];
-  pedidosLevantamento: PedidoLevantamento[];
-  documentosDevolucao: DocumentoDevolucao[];
-  nextPedidoNumber: number;
+function notify() {
+  _listeners.forEach((l) => l());
 }
 
-function loadState(): StoreState {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as StoreState;
-      return parsed;
-    }
-  } catch { /* fallback to defaults */ }
-  return {
-    produtos: [...produtosIniciais],
-    tipologias: [...tipologiasIniciais],
-    localizacoes: [...localizacoesIniciais],
-    movimentos: [],
-    pedidos: [],
-    pedidosLevantamento: [],
-    documentosDevolucao: [],
-    nextPedidoNumber: 1,
-  };
+async function fetchAll() {
+  const [pRes, tRes, lRes, mRes, pedRes, plRes, ddRes] = await Promise.all([
+    supabase.from("stock_produtos").select("*").order("nome"),
+    supabase.from("stock_tipologias").select("*").order("nome"),
+    supabase.from("stock_localizacoes").select("*").order("nome"),
+    supabase.from("stock_movimentos").select("*").order("created_at", { ascending: false }),
+    supabase.from("stock_pedidos").select("*").order("criado_em", { ascending: false }),
+    supabase.from("stock_pedidos_levantamento").select("*").order("created_at", { ascending: false }),
+    supabase.from("stock_documentos_devolucao").select("*").order("created_at", { ascending: false }),
+  ]);
+
+  _produtos = (pRes.data || []).map((p: any) => ({
+    id: p.id, nome: p.nome, tipologia: p.tipologia, localizacao: p.localizacao || "",
+    stockAtual: p.stock_atual, stockMinimo: p.stock_minimo,
+  }));
+
+  _tipologias = (tRes.data || []).map((t: any) => ({
+    id: t.id, nome: t.nome, descricao: t.descricao || "",
+  }));
+
+  _localizacoes = (lRes.data || []).map((l: any) => ({
+    id: l.id, nome: l.nome, descricao: l.descricao || "",
+  }));
+
+  _movimentos = (mRes.data || []).map((m: any) => ({
+    id: m.id, produtoId: m.produto_id, produtoNome: m.produto_nome,
+    tipo: m.tipo as "levantamento" | "devolucao",
+    quantidade: m.quantidade, data: m.data, responsavel: m.responsavel || "", evento: m.evento || "",
+  }));
+
+  _pedidos = (pedRes.data || []).map((p: any) => ({
+    id: p.id, numero: p.numero, dataPedido: p.data_pedido,
+    nomeRequisitante: p.nome_requisitante, email: p.email,
+    origem: p.origem || "", destino: p.destino || "", descricaoDestino: p.descricao_destino || "",
+    tipoEvento: p.tipo_evento || "", nomeEvento: p.nome_evento || "",
+    dataEvento: p.data_evento || "", dataRecolha: p.data_recolha || "",
+    responsavelLevantamento: p.responsavel_levantamento || "",
+    prioridade: p.prioridade as Pedido["prioridade"],
+    observacoes: p.observacoes || "",
+    produtos: (p.produtos || []) as PedidoProduto[],
+    estado: p.estado as Pedido["estado"],
+    criadoEm: p.criado_em,
+  }));
+
+  _pedidosLevantamento = (plRes.data || []).map((pl: any) => ({
+    id: pl.id, produtoId: pl.produto_id, produtoNome: pl.produto_nome,
+    quantidadeLevantada: pl.quantidade_levantada, quantidadeDevolvida: pl.quantidade_devolvida,
+    consumoReal: pl.consumo_real, responsavel: pl.responsavel || "", evento: pl.evento || "",
+    data: pl.data, estado: pl.estado as "Ativo" | "Concluído",
+  }));
+
+  _documentosDevolucao = (ddRes.data || []).map((d: any) => ({
+    id: d.id, nome: d.nome, nomeEvento: d.nome_evento || "",
+    dataEntrega: d.data_entrega, responsavel: d.responsavel || "",
+    produtos: (d.produtos || []) as ProdutoDevolucaoDoc[],
+    observacoes: d.observacoes || "",
+  }));
+
+  _loading = false;
+  _initialized = true;
+  notify();
 }
 
-function saveState() {
-  const state: StoreState = {
+// Backup functions (now export from DB)
+export function getFullBackup(): string {
+  return JSON.stringify({
+    version: 2,
+    date: new Date().toISOString(),
     produtos: _produtos,
     tipologias: _tipologias,
     localizacoes: _localizacoes,
@@ -156,81 +182,26 @@ function saveState() {
     pedidos: _pedidos,
     pedidosLevantamento: _pedidosLevantamento,
     documentosDevolucao: _documentosDevolucao,
-    nextPedidoNumber: _nextPedidoNumber,
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }, null, 2);
 }
 
-// Export for backup page
-export function getFullBackup(): string {
-  const stock = localStorage.getItem(STORAGE_KEY) || "{}";
-  const users = localStorage.getItem("erp_users") || "[]";
-  const backup = {
-    version: 1,
-    date: new Date().toISOString(),
-    stock: JSON.parse(stock),
-    users: JSON.parse(users),
-  };
-  return JSON.stringify(backup, null, 2);
-}
-
-export function restoreFromBackup(json: string): string | null {
-  try {
-    const data = JSON.parse(json);
-    if (!data.version || !data.stock) return "Ficheiro de backup inválido.";
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data.stock));
-    if (data.users) localStorage.setItem("erp_users", JSON.stringify(data.users));
-    // Reload state
-    const s = data.stock as StoreState;
-    _produtos = s.produtos || [];
-    _tipologias = s.tipologias || [];
-    _localizacoes = s.localizacoes || [];
-    _movimentos = s.movimentos || [];
-    _pedidos = s.pedidos || [];
-    _pedidosLevantamento = s.pedidosLevantamento || [];
-    _documentosDevolucao = s.documentosDevolucao || [];
-    _nextPedidoNumber = s.nextPedidoNumber || 1;
-    notify();
-    return null;
-  } catch {
-    return "Erro ao ler o ficheiro de backup.";
-  }
-}
-
-const initial = loadState();
-let _produtos: Produto[] = initial.produtos;
-let _tipologias: Tipologia[] = initial.tipologias;
-let _localizacoes: Localizacao[] = initial.localizacoes;
-let _movimentos: Movimento[] = initial.movimentos;
-let _pedidos: Pedido[] = initial.pedidos;
-let _pedidosLevantamento: PedidoLevantamento[] = initial.pedidosLevantamento;
-let _documentosDevolucao: DocumentoDevolucao[] = initial.documentosDevolucao;
-let _nextPedidoNumber = initial.nextPedidoNumber;
-let _listeners: (() => void)[] = [];
-
-function notify() {
-  saveState();
-  _listeners.forEach((l) => l());
+export function restoreFromBackup(_json: string): string | null {
+  return "A restauração de backup não está disponível na versão cloud. Os dados são geridos diretamente na base de dados.";
 }
 
 export function useStockStore() {
   const [, setTick] = useState(0);
   const rerender = useCallback(() => setTick((t) => t + 1), []);
 
-  useState(() => {
+  useEffect(() => {
     _listeners.push(rerender);
+    if (!_initialized) fetchAll();
     return () => {
       _listeners = _listeners.filter((l) => l !== rerender);
     };
-  });
+  }, [rerender]);
 
-  const produtos = _produtos;
-  const tipologias = _tipologias;
-  const localizacoes = _localizacoes;
-  const movimentos = _movimentos;
-  const pedidos = _pedidos;
-  const pedidosLevantamento = _pedidosLevantamento;
-  const documentosDevolucao = _documentosDevolucao;
+  const refresh = () => fetchAll();
 
   const getEstado = (p: Produto): "OK" | "Abaixo do mínimo" | "Esgotado" => {
     if (p.stockAtual === 0) return "Esgotado";
@@ -238,10 +209,10 @@ export function useStockStore() {
     return "OK";
   };
 
-  const importarExcel = (file: File): Promise<void> => {
+  const importarExcel = async (file: File): Promise<void> => {
     return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
           const text = e.target?.result as string;
           if (!text) { resolve(); return; }
@@ -253,6 +224,7 @@ export function useStockStore() {
           const stockIdx = headers.findIndex((h) => h.includes("quantidade") || h.includes("stock atual") || h.includes("qty") || h.includes("stock"));
           const minIdx = headers.findIndex((h) => h.includes("mínimo") || h.includes("minimo") || h.includes("min"));
           const locIdx = headers.findIndex((h) => h.includes("localização") || h.includes("localizacao") || h.includes("localiza") || h.includes("location"));
+
           for (let i = 1; i < lines.length; i++) {
             const cols = lines[i].split(/[,;\t]/).map((c) => c.trim());
             const nome = nomeIdx >= 0 ? cols[nomeIdx] : "";
@@ -261,18 +233,20 @@ export function useStockStore() {
             const stockAtual = stockIdx >= 0 ? parseInt(cols[stockIdx]) || 0 : 0;
             const stockMinimo = minIdx >= 0 ? parseInt(cols[minIdx]) || DEFAULT_STOCK_MINIMO : DEFAULT_STOCK_MINIMO;
             const localizacao = locIdx >= 0 ? cols[locIdx] || "" : "";
+
             const existing = _produtos.find((p) => p.nome.toLowerCase() === nome.toLowerCase());
             if (existing) {
-              existing.stockAtual = stockAtual;
-              existing.tipologia = tipologia;
-              if (localizacao) existing.localizacao = localizacao;
-              if (minIdx >= 0) existing.stockMinimo = stockMinimo;
+              await supabase.from("stock_produtos").update({
+                stock_atual: stockAtual, tipologia, localizacao: localizacao || existing.localizacao,
+                stock_minimo: minIdx >= 0 ? stockMinimo : existing.stockMinimo,
+              }).eq("id", existing.id);
             } else {
-              _produtos.push({ id: Date.now() + i, nome, tipologia, localizacao, stockAtual, stockMinimo });
+              await supabase.from("stock_produtos").insert({
+                nome, tipologia, localizacao, stock_atual: stockAtual, stock_minimo: stockMinimo,
+              });
             }
           }
-          _produtos = [..._produtos];
-          notify();
+          await fetchAll();
         } catch { /* silent */ }
         resolve();
       };
@@ -280,27 +254,37 @@ export function useStockStore() {
     });
   };
 
-  const adicionarProduto = (nome: string, tipologia: string, localizacao: string, stockAtual: number, stockMinimo: number): string | null => {
+  const adicionarProduto = async (nome: string, tipologia: string, localizacao: string, stockAtual: number, stockMinimo: number): Promise<string | null> => {
     if (!nome.trim()) return "Nome do produto é obrigatório.";
     const existing = _produtos.find((p) => p.nome.toLowerCase() === nome.toLowerCase());
     if (existing) return `Produto "${nome}" já existe.`;
-    _produtos = [..._produtos, { id: Date.now(), nome: nome.trim(), tipologia: tipologia || "Geral", localizacao: localizacao || "", stockAtual: stockAtual || 0, stockMinimo: stockMinimo || DEFAULT_STOCK_MINIMO }];
-    notify();
+    const { error } = await supabase.from("stock_produtos").insert({
+      nome: nome.trim(), tipologia: tipologia || "Geral", localizacao: localizacao || "",
+      stock_atual: stockAtual || 0, stock_minimo: stockMinimo || DEFAULT_STOCK_MINIMO,
+    });
+    if (error) return error.message;
+    await fetchAll();
     return null;
   };
 
-  const editarProduto = (id: number, nome: string, tipologia: string, localizacao: string, stockAtual: number, stockMinimo: number) => {
-    _produtos = _produtos.map((p) => p.id === id ? { ...p, nome: nome.trim(), tipologia, localizacao, stockAtual, stockMinimo } : p);
-    notify();
+  const editarProduto = async (id: string, nome: string, tipologia: string, localizacao: string, stockAtual: number, stockMinimo: number) => {
+    await supabase.from("stock_produtos").update({
+      nome: nome.trim(), tipologia, localizacao, stock_atual: stockAtual, stock_minimo: stockMinimo,
+    }).eq("id", id);
+    await fetchAll();
   };
 
-  const eliminarProduto = (id: number) => {
-    _produtos = _produtos.filter((p) => p.id !== id);
-    notify();
+  const eliminarProduto = async (id: string) => {
+    await supabase.from("stock_produtos").delete().eq("id", id);
+    await fetchAll();
   };
 
-  const getNextPedidoNumber = () => {
-    return `PED-${String(_nextPedidoNumber).padStart(4, "0")}`;
+  const getNextPedidoNumber = (): string => {
+    const maxNum = _pedidos.reduce((max, p) => {
+      const match = p.numero.match(/PED-(\d+)/);
+      return match ? Math.max(max, parseInt(match[1])) : max;
+    }, 0);
+    return `PED-${String(maxNum + 1).padStart(4, "0")}`;
   };
 
   const exportarTemplate = () => {
@@ -318,119 +302,205 @@ export function useStockStore() {
   };
 
   // Tipologias CRUD
-  const adicionarTipologia = (nome: string, descricao: string): string | null => {
+  const adicionarTipologia = async (nome: string, descricao: string): Promise<string | null> => {
     if (!nome.trim()) return "Nome é obrigatório.";
     if (_tipologias.find((t) => t.nome.toLowerCase() === nome.toLowerCase())) return `Tipologia "${nome}" já existe.`;
-    _tipologias = [..._tipologias, { id: Date.now(), nome: nome.trim(), descricao: descricao.trim() }];
-    notify();
+    const { error } = await supabase.from("stock_tipologias").insert({ nome: nome.trim(), descricao: descricao.trim() });
+    if (error) return error.message;
+    await fetchAll();
     return null;
   };
-  const editarTipologia = (id: number, nome: string, descricao: string) => {
-    _tipologias = _tipologias.map((t) => t.id === id ? { ...t, nome: nome.trim(), descricao: descricao.trim() } : t);
-    notify();
+
+  const editarTipologia = async (id: string, nome: string, descricao: string) => {
+    await supabase.from("stock_tipologias").update({ nome: nome.trim(), descricao: descricao.trim() }).eq("id", id);
+    await fetchAll();
   };
-  const eliminarTipologia = (id: number) => {
-    _tipologias = _tipologias.filter((t) => t.id !== id);
-    notify();
+
+  const eliminarTipologia = async (id: string) => {
+    await supabase.from("stock_tipologias").delete().eq("id", id);
+    await fetchAll();
   };
 
   // Localizações CRUD
-  const adicionarLocalizacao = (nome: string, descricao: string): string | null => {
+  const adicionarLocalizacao = async (nome: string, descricao: string): Promise<string | null> => {
     if (!nome.trim()) return "Nome é obrigatório.";
     if (_localizacoes.find((l) => l.nome.toLowerCase() === nome.toLowerCase())) return `Localização "${nome}" já existe.`;
-    _localizacoes = [..._localizacoes, { id: Date.now(), nome: nome.trim(), descricao: descricao.trim() }];
-    notify();
+    const { error } = await supabase.from("stock_localizacoes").insert({ nome: nome.trim(), descricao: descricao.trim() });
+    if (error) return error.message;
+    await fetchAll();
     return null;
   };
-  const editarLocalizacao = (id: number, nome: string, descricao: string) => {
-    _localizacoes = _localizacoes.map((l) => l.id === id ? { ...l, nome: nome.trim(), descricao: descricao.trim() } : l);
-    notify();
-  };
-  const eliminarLocalizacao = (id: number) => {
-    _localizacoes = _localizacoes.filter((l) => l.id !== id);
-    notify();
+
+  const editarLocalizacao = async (id: string, nome: string, descricao: string) => {
+    await supabase.from("stock_localizacoes").update({ nome: nome.trim(), descricao: descricao.trim() }).eq("id", id);
+    await fetchAll();
   };
 
-  const criarPedido = (pedidoData: Omit<Pedido, "id" | "estado" | "criadoEm" | "numero">): string | null => {
+  const eliminarLocalizacao = async (id: string) => {
+    await supabase.from("stock_localizacoes").delete().eq("id", id);
+    await fetchAll();
+  };
+
+  const criarPedido = async (pedidoData: Omit<Pedido, "id" | "estado" | "criadoEm" | "numero">): Promise<string | null> => {
+    // Validate stock
     for (const pp of pedidoData.produtos) {
       const prod = _produtos.find((p) => p.id === pp.produtoId);
       if (!prod) return `Produto "${pp.produtoNome}" não encontrado.`;
       if (pp.quantidade > prod.stockAtual) return `Stock insuficiente para "${pp.produtoNome}" (disponível: ${prod.stockAtual}).`;
     }
+
+    // Deduct stock
     for (const pp of pedidoData.produtos) {
       const prod = _produtos.find((p) => p.id === pp.produtoId)!;
-      prod.stockAtual -= pp.quantidade;
+      await supabase.from("stock_produtos").update({
+        stock_atual: prod.stockAtual - pp.quantidade,
+      }).eq("id", pp.produtoId);
     }
+
     const numero = getNextPedidoNumber();
-    _nextPedidoNumber++;
-    const newPedido: Pedido = { ...pedidoData, id: Date.now(), numero, estado: "Pendente", criadoEm: new Date().toISOString() };
-    _pedidos = [..._pedidos, newPedido];
-    _produtos = [..._produtos];
-    notify();
+    const { error } = await supabase.from("stock_pedidos").insert({
+      numero,
+      data_pedido: pedidoData.dataPedido,
+      nome_requisitante: pedidoData.nomeRequisitante,
+      email: pedidoData.email,
+      origem: pedidoData.origem,
+      destino: pedidoData.destino,
+      descricao_destino: pedidoData.descricaoDestino,
+      tipo_evento: pedidoData.tipoEvento,
+      nome_evento: pedidoData.nomeEvento,
+      data_evento: pedidoData.dataEvento,
+      data_recolha: pedidoData.dataRecolha,
+      responsavel_levantamento: pedidoData.responsavelLevantamento,
+      prioridade: pedidoData.prioridade,
+      observacoes: pedidoData.observacoes,
+      produtos: pedidoData.produtos as any,
+      estado: "Pendente",
+    });
+
+    if (error) return error.message;
+    await fetchAll();
     return null;
   };
 
-  const atualizarEstadoPedido = (pedidoId: number, estado: Pedido["estado"]) => {
+  const atualizarEstadoPedido = async (pedidoId: string, estado: Pedido["estado"]) => {
     const pedido = _pedidos.find((p) => p.id === pedidoId);
     if (!pedido) return;
+
     if (estado === "Cancelado") {
       for (const pp of pedido.produtos) {
         const prod = _produtos.find((p) => p.id === pp.produtoId);
-        if (prod) prod.stockAtual += pp.quantidade;
+        if (prod) {
+          await supabase.from("stock_produtos").update({
+            stock_atual: prod.stockAtual + pp.quantidade,
+          }).eq("id", pp.produtoId);
+        }
       }
-      _produtos = [..._produtos];
     }
-    pedido.estado = estado;
-    _pedidos = [..._pedidos];
-    notify();
+
+    await supabase.from("stock_pedidos").update({ estado }).eq("id", pedidoId);
+    await fetchAll();
   };
 
-  const criarLevantamento = (produtoId: number, quantidade: number, responsavel: string, evento: string, data: string): string | null => {
+  const criarLevantamento = async (produtoId: string, quantidade: number, responsavel: string, evento: string, data: string): Promise<string | null> => {
     const produto = _produtos.find((p) => p.id === produtoId);
     if (!produto) return "Produto não encontrado";
     if (quantidade <= 0) return "Quantidade inválida";
     if (quantidade > produto.stockAtual) return "Stock insuficiente";
-    produto.stockAtual -= quantidade;
-    const pl: PedidoLevantamento = { id: Date.now(), produtoId, produtoNome: produto.nome, quantidadeLevantada: quantidade, quantidadeDevolvida: 0, consumoReal: quantidade, responsavel, evento, data, estado: "Ativo" };
-    _pedidosLevantamento = [..._pedidosLevantamento, pl];
-    _movimentos = [..._movimentos, { id: Date.now(), produtoId, produtoNome: produto.nome, tipo: "levantamento", quantidade, data, responsavel, evento }];
-    _produtos = [..._produtos];
-    notify();
+
+    // Deduct stock
+    await supabase.from("stock_produtos").update({
+      stock_atual: produto.stockAtual - quantidade,
+    }).eq("id", produtoId);
+
+    // Create levantamento record
+    await supabase.from("stock_pedidos_levantamento").insert({
+      produto_id: produtoId, produto_nome: produto.nome,
+      quantidade_levantada: quantidade, quantidade_devolvida: 0, consumo_real: quantidade,
+      responsavel, evento, data, estado: "Ativo",
+    });
+
+    // Create movement record
+    await supabase.from("stock_movimentos").insert({
+      produto_id: produtoId, produto_nome: produto.nome,
+      tipo: "levantamento", quantidade, data, responsavel, evento,
+    });
+
+    await fetchAll();
     return null;
   };
 
-  const registarDevolucao = (pedidoId: number, quantidadeDevolvida: number, dataDevolucao: string): string | null => {
+  const registarDevolucao = async (pedidoId: string, quantidadeDevolvida: number, dataDevolucao: string): Promise<string | null> => {
     const pedido = _pedidosLevantamento.find((p) => p.id === pedidoId);
     if (!pedido) return "Pedido não encontrado";
     if (pedido.estado === "Concluído") return "Pedido já concluído";
     if (quantidadeDevolvida <= 0) return "Quantidade inválida";
     if (quantidadeDevolvida > (pedido.quantidadeLevantada - pedido.quantidadeDevolvida)) return "Quantidade superior ao levantado";
-    pedido.quantidadeDevolvida += quantidadeDevolvida;
-    pedido.consumoReal = pedido.quantidadeLevantada - pedido.quantidadeDevolvida;
-    pedido.estado = "Concluído";
-    const produto = _produtos.find((p) => p.id === pedido.produtoId);
-    if (produto) produto.stockAtual += quantidadeDevolvida;
-    _movimentos = [..._movimentos, { id: Date.now() + 1, produtoId: pedido.produtoId, produtoNome: pedido.produtoNome, tipo: "devolucao", quantidade: quantidadeDevolvida, data: dataDevolucao, responsavel: pedido.responsavel, evento: pedido.evento }];
-    _pedidosLevantamento = [..._pedidosLevantamento];
-    _produtos = [..._produtos];
-    notify();
+
+    const newDevolvida = pedido.quantidadeDevolvida + quantidadeDevolvida;
+    const newConsumo = pedido.quantidadeLevantada - newDevolvida;
+
+    await supabase.from("stock_pedidos_levantamento").update({
+      quantidade_devolvida: newDevolvida,
+      consumo_real: newConsumo,
+      estado: "Concluído",
+    }).eq("id", pedidoId);
+
+    // Restore stock
+    if (pedido.produtoId) {
+      const produto = _produtos.find((p) => p.id === pedido.produtoId);
+      if (produto) {
+        await supabase.from("stock_produtos").update({
+          stock_atual: produto.stockAtual + quantidadeDevolvida,
+        }).eq("id", pedido.produtoId);
+      }
+    }
+
+    // Movement record
+    await supabase.from("stock_movimentos").insert({
+      produto_id: pedido.produtoId, produto_nome: pedido.produtoNome,
+      tipo: "devolucao", quantidade: quantidadeDevolvida, data: dataDevolucao,
+      responsavel: pedido.responsavel, evento: pedido.evento,
+    });
+
+    await fetchAll();
     return null;
   };
 
-  const registarDocumentoDevolucao = (doc: Omit<DocumentoDevolucao, "id">): void => {
-    const newDoc: DocumentoDevolucao = { ...doc, id: Date.now() };
-    _documentosDevolucao = [newDoc, ..._documentosDevolucao];
+  const registarDocumentoDevolucao = async (doc: Omit<DocumentoDevolucao, "id">): Promise<void> => {
+    // Insert document
+    await supabase.from("stock_documentos_devolucao").insert({
+      nome: doc.nome, nome_evento: doc.nomeEvento, data_entrega: doc.dataEntrega,
+      responsavel: doc.responsavel, produtos: doc.produtos as any, observacoes: doc.observacoes,
+    });
+
+    // Restore stock and create movements
     for (const pp of doc.produtos) {
       const produto = _produtos.find((p) => p.id === pp.produtoId);
-      if (produto) produto.stockAtual += pp.quantidade;
-      _movimentos = [..._movimentos, { id: Date.now() + pp.produtoId, produtoId: pp.produtoId, produtoNome: pp.produtoNome, tipo: "devolucao" as const, quantidade: pp.quantidade, data: doc.dataEntrega, responsavel: doc.responsavel, evento: doc.nomeEvento }];
+      if (produto) {
+        await supabase.from("stock_produtos").update({
+          stock_atual: produto.stockAtual + pp.quantidade,
+        }).eq("id", pp.produtoId);
+      }
+      await supabase.from("stock_movimentos").insert({
+        produto_id: pp.produtoId, produto_nome: pp.produtoNome,
+        tipo: "devolucao", quantidade: pp.quantidade, data: doc.dataEntrega,
+        responsavel: doc.responsavel, evento: doc.nomeEvento,
+      });
     }
-    _produtos = [..._produtos];
-    notify();
+
+    await fetchAll();
   };
 
   return {
-    produtos, tipologias, localizacoes, movimentos, pedidos, pedidosLevantamento, documentosDevolucao,
+    produtos: _produtos,
+    tipologias: _tipologias,
+    localizacoes: _localizacoes,
+    movimentos: _movimentos,
+    pedidos: _pedidos,
+    pedidosLevantamento: _pedidosLevantamento,
+    documentosDevolucao: _documentosDevolucao,
+    loading: _loading,
+    refresh,
     getEstado, importarExcel, adicionarProduto, editarProduto, eliminarProduto, exportarTemplate, getNextPedidoNumber,
     criarPedido, atualizarEstadoPedido, criarLevantamento, registarDevolucao, registarDocumentoDevolucao,
     adicionarTipologia, editarTipologia, eliminarTipologia,
