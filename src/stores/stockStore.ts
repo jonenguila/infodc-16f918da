@@ -56,7 +56,7 @@ export interface Pedido {
   prioridade: "Baixa" | "Média" | "Alta" | "Urgente";
   observacoes: string;
   produtos: PedidoProduto[];
-  estado: "Pendente" | "Aprovado" | "Em Preparação" | "Entregue" | "Concluído" | "Cancelado";
+  estado: "Pendente" | "Entregue" | "Cancelado";
   criadoEm: string;
 }
 

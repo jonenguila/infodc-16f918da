@@ -28,10 +28,7 @@ import { useStockStore, type Pedido } from "@/stores/stockStore";
 
 const estadoStyles: Record<string, string> = {
   Pendente: "bg-amber-100 text-amber-700",
-  Aprovado: "bg-blue-100 text-blue-700",
-  "Em Preparação": "bg-purple-100 text-purple-700",
   Entregue: "bg-green-100 text-green-700",
-  Concluído: "bg-green-100 text-green-700",
   Cancelado: "bg-red-100 text-red-700",
 };
 
@@ -133,8 +130,8 @@ const ListagemPedidos = () => {
         {[
           { label: "Total", value: pedidos.length, color: "text-primary" },
           { label: "Pendentes", value: pedidos.filter((p) => p.estado === "Pendente").length, color: "text-amber-600" },
-          { label: "Em Curso", value: pedidos.filter((p) => ["Aprovado", "Em Preparação"].includes(p.estado)).length, color: "text-blue-600" },
-          { label: "Concluídos", value: pedidos.filter((p) => p.estado === "Concluído" || p.estado === "Entregue").length, color: "text-green-600" },
+          { label: "Entregues", value: pedidos.filter((p) => p.estado === "Entregue").length, color: "text-green-600" },
+          { label: "Cancelados", value: pedidos.filter((p) => p.estado === "Cancelado").length, color: "text-red-600" },
         ].map((c) => (
           <Card key={c.label}>
             <CardContent className="p-4 text-center">
@@ -156,10 +153,7 @@ const ListagemPedidos = () => {
           <SelectContent>
             <SelectItem value="todos">Todos os estados</SelectItem>
             <SelectItem value="Pendente">Pendente</SelectItem>
-            <SelectItem value="Aprovado">Aprovado</SelectItem>
-            <SelectItem value="Em Preparação">Em Preparação</SelectItem>
             <SelectItem value="Entregue">Entregue</SelectItem>
-            <SelectItem value="Concluído">Concluído</SelectItem>
             <SelectItem value="Cancelado">Cancelado</SelectItem>
           </SelectContent>
         </Select>
@@ -230,10 +224,7 @@ const ListagemPedidos = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Pendente">Pendente</SelectItem>
-                      <SelectItem value="Aprovado">Aprovado</SelectItem>
-                      <SelectItem value="Em Preparação">Em Preparação</SelectItem>
                       <SelectItem value="Entregue">Entregue</SelectItem>
-                      <SelectItem value="Concluído">Concluído</SelectItem>
                       <SelectItem value="Cancelado">Cancelado</SelectItem>
                     </SelectContent>
                   </Select>

@@ -33,7 +33,7 @@ const Dashboard = () => {
   
 
   const stockTotal = produtos.reduce((sum, p) => sum + p.stockAtual, 0);
-  const pedidosPendentes = pedidos.filter((p) => p.estado === "Pendente" || p.estado === "Em Preparação" || p.estado === "Aprovado");
+  const pedidosPendentes = pedidos.filter((p) => p.estado === "Pendente");
 
   const stats = [
     { label: "Serviços", value: "4", icon: Wrench, change: "Ativos" },
@@ -326,10 +326,10 @@ const Dashboard = () => {
                     </div>
                     <div className="flex items-center gap-3">
                       <Badge className={`text-[11px] border-0 ${
-                        order.estado === "Concluído" || order.estado === "Entregue" ? "bg-green-100 text-green-700"
+                        order.estado === "Entregue" ? "bg-green-100 text-green-700"
                           : order.estado === "Pendente" ? "bg-amber-100 text-amber-700"
                           : order.estado === "Cancelado" ? "bg-red-100 text-red-700"
-                          : "bg-blue-100 text-blue-700"
+                          : "bg-muted text-muted-foreground"
                       }`}>{order.estado}</Badge>
                       <span className="text-xs text-muted-foreground">{format(parseISO(order.criadoEm), "dd/MM/yyyy")}</span>
                     </div>
