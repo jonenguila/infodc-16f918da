@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Users, Palette, Image, ExternalLink } from "lucide-react";
+import { Palette, Image, ExternalLink } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 
@@ -13,14 +13,6 @@ interface LinkItem {
 }
 
 const links: LinkItem[] = [
-  {
-    id: 1,
-    nome: "Recursos Humanos",
-    descricao: "Acesso ao portal de recursos humanos",
-    icon: Users,
-    url: "",
-    cor: "bg-blue-500/10 text-blue-600",
-  },
   {
     id: 2,
     nome: "Design e Comunicação",
