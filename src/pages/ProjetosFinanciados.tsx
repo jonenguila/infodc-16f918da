@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Calendar, Users, Building2, Copy, CheckCircle2, X, Download, Link2, User } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,8 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ImageUpload from "@/components/ImageUpload";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Parceiro {
   nome: string;
@@ -367,6 +369,22 @@ const ProjetosFinanciados = () => {
   const [selectedProjeto, setSelectedProjeto] = useState<Projeto | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
+  // Load persisted images from DB
+  useEffect(() => {
+    const loadImages = async () => {
+      const { data } = await supabase.from("projetos_imagens").select("id, imagem_url");
+      if (data && data.length > 0) {
+        setProjetos((prev) =>
+          prev.map((p) => {
+            const row = data.find((d: any) => d.id === p.id);
+            return row && row.imagem_url ? { ...p, imagemUrl: row.imagem_url } : p;
+          })
+        );
+      }
+    };
+    loadImages();
+  }, []);
+
   const [form, setForm] = useState({
     titulo: "", descricao: "", codigo: "", programa: "", tipologia: "",
     dataInicio: "", dataFim: "", responsavel: "", investimentoTotal: "", linkUtil: "", imagemUrl: "",
@@ -588,9 +606,11 @@ const ProjetosFinanciados = () => {
         <ProjetoDetalheModal
           projeto={selectedProjeto}
           onClose={() => setSelectedProjeto(null)}
-          onImageChange={(id, url) => {
+          onImageChange={async (id, url) => {
             setProjetos((prev) => prev.map((p) => p.id === id ? { ...p, imagemUrl: url } : p));
             setSelectedProjeto((prev) => prev ? { ...prev, imagemUrl: url } : prev);
+            const { error } = await supabase.from("projetos_imagens").upsert({ id, imagem_url: url, updated_at: new Date().toISOString() });
+            if (error) toast.error("Erro ao guardar imagem");
           }}
         />
       )}

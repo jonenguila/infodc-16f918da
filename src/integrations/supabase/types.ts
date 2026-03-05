@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      produtos_imagens: {
+        Row: {
+          id: number
+          imagem_url: string
+          logo_url: string
+          updated_at: string
+        }
+        Insert: {
+          id: number
+          imagem_url?: string
+          logo_url?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          imagem_url?: string
+          logo_url?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar: string | null
@@ -44,6 +65,24 @@ export type Database = {
           nome?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      projetos_imagens: {
+        Row: {
+          id: number
+          imagem_url: string
+          updated_at: string
+        }
+        Insert: {
+          id: number
+          imagem_url?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          imagem_url?: string
+          updated_at?: string
         }
         Relationships: []
       }

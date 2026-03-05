@@ -1,4 +1,4 @@
-import { useState, useRef, KeyboardEvent } from "react";
+import { useState, useEffect, useRef, KeyboardEvent } from "react";
 import {
   Search, Filter, Users, Building2, Calendar, Link2,
   ChevronDown, X, Plus, Trash2, UserCheck, Briefcase,
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const defaultTags = [
   "Passaporte Digital de Produto", "Inteligência Artificial", "Capital Natural",
@@ -462,6 +463,27 @@ const Produtos = () => {
   const [selectedProduto, setSelectedProduto] = useState<Produto | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
 
+  // Load persisted images from DB
+  useEffect(() => {
+    const loadImages = async () => {
+      const { data } = await supabase.from("produtos_imagens").select("id, imagem_url, logo_url");
+      if (data && data.length > 0) {
+        setProdutos((prev) =>
+          prev.map((p) => {
+            const row = data.find((d: any) => d.id === p.id);
+            if (!row) return p;
+            return {
+              ...p,
+              ...(row.imagem_url ? { imagemUrl: row.imagem_url } : {}),
+              ...(row.logo_url ? { logoUrl: row.logo_url } : {}),
+            };
+          })
+        );
+      }
+    };
+    loadImages();
+  }, []);
+
   const toggleTag = (tag: string) => {
     if (tag === "all") { setSelectedTags([]); return; }
     setSelectedTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]);
@@ -584,9 +606,12 @@ const Produtos = () => {
         <ProdutoModal
           produto={selectedProduto}
           onClose={() => setSelectedProduto(null)}
-          onImageChange={(id, field, url) => {
+          onImageChange={async (id, field, url) => {
             setProdutos((prev) => prev.map((p) => p.id === id ? { ...p, [field]: url } : p));
             setSelectedProduto((prev) => prev ? { ...prev, [field]: url } : prev);
+            const dbField = field === "imagemUrl" ? "imagem_url" : "logo_url";
+            const { error } = await supabase.from("produtos_imagens").upsert({ id, [dbField]: url, updated_at: new Date().toISOString() });
+            if (error) toast.error("Erro ao guardar imagem");
           }}
         />
       )}
