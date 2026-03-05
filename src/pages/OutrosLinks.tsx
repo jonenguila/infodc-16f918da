@@ -75,10 +75,6 @@ const OutrosLinks = () => {
                 {link.nome}
               </h3>
               <p className="text-sm text-muted-foreground">{link.descricao}</p>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>Abrir em nova aba</span>
-              </div>
             </CardContent>
           </Card>
         ))}

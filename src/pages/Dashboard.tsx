@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import {
   Wrench, Box, ClipboardList, FolderKanban, BarChart3, TrendingUp,
 } from "lucide-react";
-import { format, subMonths, subYears, parseISO, isWithinInterval, startOfMonth, endOfMonth, startOfYear, endOfYear, formatDistanceToNow } from "date-fns";
+import { format, subDays, subMonths, subYears, parseISO, isWithinInterval, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, endOfYear, formatDistanceToNow } from "date-fns";
 import { pt } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,7 @@ import { CalendarIcon } from "lucide-react";
 import { useStockStore } from "@/stores/stockStore";
 
 
-type FilterMode = "month" | "year" | "range";
+type FilterMode = "day" | "month" | "year" | "range";
 type ChartType = "bar" | "line";
 type MetricType = "pedidos" | "unidades";
 
@@ -67,7 +67,7 @@ const Dashboard = () => {
       .slice(0, 6);
   }, [pedidos]);
 
-  const [filterMode, setFilterMode] = useState<FilterMode>("month");
+  const [filterMode, setFilterMode] = useState<FilterMode>("day");
   const [chartType, setChartType] = useState<ChartType>("bar");
   const [metric, setMetric] = useState<MetricType>("pedidos");
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
@@ -75,6 +75,24 @@ const Dashboard = () => {
 
   const chartData = useMemo(() => {
     const now = new Date();
+
+    if (filterMode === "day") {
+      const days: { label: string; value: number }[] = [];
+      for (let i = 29; i >= 0; i--) {
+        const d = subDays(now, i);
+        const start = startOfDay(d);
+        const end = endOfDay(d);
+        const filtered = pedidos.filter((p) => {
+          const pd = parseISO(p.criadoEm);
+          return isWithinInterval(pd, { start, end });
+        });
+        const val = metric === "pedidos"
+          ? filtered.length
+          : filtered.reduce((sum, p) => sum + p.produtos.reduce((s, pp) => s + pp.quantidade, 0), 0);
+        days.push({ label: format(d, "dd/MM", { locale: pt }), value: val });
+      }
+      return days;
+    }
 
     if (filterMode === "month") {
       const months: { label: string; value: number }[] = [];
@@ -223,6 +241,7 @@ const Dashboard = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="day">Últimos 30 Dias</SelectItem>
                 <SelectItem value="month">Últimos 12 Meses</SelectItem>
                 <SelectItem value="year">Últimos 5 Anos</SelectItem>
                 <SelectItem value="range">Intervalo de Datas</SelectItem>
