@@ -344,7 +344,7 @@ const ProjetoDetalheModal = ({ projeto, onClose }: { projeto: Projeto; onClose: 
             <p className="text-xs text-muted-foreground text-center">{NA}</p>
 
             <Button variant="outline" className="gap-2 w-full" asChild>
-              <a href="/docs/Visus_Portefólio_de_Projetos_Financiados.pdf" target="_blank" rel="noopener noreferrer">
+              <a href="/docs/Visus_Portfolio_Projetos_Financiados.pdf" target="_blank" rel="noopener noreferrer">
                 <Download className="w-4 h-4" /> Visus – Portefólio de Projetos Financiados
               </a>
             </Button>
