@@ -683,7 +683,7 @@ const HistoricoTab = () => {
       const tipoLabel = m.tipo === "pedido" ? "Pedido" : m.tipo === "cancelamento" ? "Cancelamento" : m.tipo === "levantamento" ? "Levantamento" : m.tipo === "entrega" ? "Entrega" : "Devolução";
       rows.push({
         data: m.data,
-        documento: m.tipo === "pedido" || m.tipo === "cancelamento"
+        documento: m.tipo === "pedido" || m.tipo === "cancelamento" || m.tipo === "entrega"
           ? pedidos.find((p) => p.produtos.some((pp) => pp.produtoId === m.produtoId) && p.nomeEvento === m.evento)?.numero || `${tipoLabel} #${m.id.slice(0, 8)}`
           : `${tipoLabel} #${m.id.slice(0, 8)}`,
         evento: m.evento,
