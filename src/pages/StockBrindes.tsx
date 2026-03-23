@@ -992,7 +992,7 @@ const HistoricoTab = () => {
                 <TableCell className="font-semibold text-foreground">{r.quantidade}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">{r.responsavel}</TableCell>
                 <TableCell>
-                  <Badge className={cn("border-0 text-[11px]", r.tipo === "Pedido" ? "bg-blue-100 text-blue-700" : r.tipo === "Cancelamento" ? "bg-red-100 text-red-700" : r.tipo === "Levantamento" ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700")}>
+                  <Badge className={cn("border-0 text-[11px]", r.tipo === "Pedido" ? "bg-blue-100 text-blue-700" : r.tipo === "Cancelamento" ? "bg-red-100 text-red-700" : r.tipo === "Levantamento" ? "bg-amber-100 text-amber-700" : r.tipo === "Entrega" ? "bg-purple-100 text-purple-700" : "bg-green-100 text-green-700")}>
                     {r.tipo}
                   </Badge>
                 </TableCell>
