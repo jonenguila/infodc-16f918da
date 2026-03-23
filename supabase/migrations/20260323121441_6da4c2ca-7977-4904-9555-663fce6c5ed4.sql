@@ -1,0 +1,2 @@
+ALTER TABLE stock_movimentos DROP CONSTRAINT stock_movimentos_tipo_check;
+ALTER TABLE stock_movimentos ADD CONSTRAINT stock_movimentos_tipo_check CHECK (tipo IN ('levantamento', 'devolucao', 'pedido', 'cancelamento', 'entrega'));
