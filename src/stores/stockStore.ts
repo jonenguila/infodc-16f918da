@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Produto {
@@ -27,7 +28,7 @@ export interface Movimento {
   id: string;
   produtoId: string | null;
   produtoNome: string;
-  tipo: "levantamento" | "devolucao";
+  tipo: "levantamento" | "devolucao" | "pedido" | "cancelamento";
   quantidade: number;
   data: string;
   responsavel: string;
@@ -134,7 +135,7 @@ async function fetchAll() {
 
   _movimentos = (mRes.data || []).map((m: any) => ({
     id: m.id, produtoId: m.produto_id, produtoNome: m.produto_nome,
-    tipo: m.tipo as "levantamento" | "devolucao",
+    tipo: m.tipo as Movimento["tipo"],
     quantidade: m.quantidade, data: m.data, responsavel: m.responsavel || "", evento: m.evento || "",
   }));
 
@@ -381,6 +382,17 @@ export function useStockStore() {
     });
 
     if (error) return error.message;
+
+    // Create movement records for each product in the pedido
+    for (const pp of pedidoData.produtos) {
+      await supabase.from("stock_movimentos").insert({
+        produto_id: pp.produtoId, produto_nome: pp.produtoNome,
+        tipo: "pedido", quantidade: pp.quantidade, data: pedidoData.dataPedido,
+        responsavel: pedidoData.responsavelLevantamento || pedidoData.nomeRequisitante,
+        evento: pedidoData.nomeEvento || pedidoData.tipoEvento || "",
+      });
+    }
+
     await fetchAll();
     return null;
   };
@@ -397,6 +409,14 @@ export function useStockStore() {
             stock_atual: prod.stockAtual + pp.quantidade,
           }).eq("id", pp.produtoId);
         }
+        // Create cancelamento movement record
+        await supabase.from("stock_movimentos").insert({
+          produto_id: pp.produtoId, produto_nome: pp.produtoNome,
+          tipo: "cancelamento", quantidade: pp.quantidade,
+          data: format(new Date(), "yyyy-MM-dd"),
+          responsavel: pedido.nomeRequisitante || pedido.responsavelLevantamento || "",
+          evento: pedido.nomeEvento || pedido.tipoEvento || "",
+        });
       }
     }
 

@@ -53,7 +53,7 @@ const Dashboard = () => {
     });
     movimentos.forEach((m) => {
       items.push({
-        text: `${m.tipo === "levantamento" ? "Levantamento" : "Devolução"} — ${m.produtoNome} (${m.quantidade} un.)`,
+        text: `${m.tipo === "levantamento" ? "Levantamento" : m.tipo === "pedido" ? "Pedido" : m.tipo === "cancelamento" ? "Cancelamento" : "Devolução"} — ${m.produtoNome} (${m.quantidade} un.)`,
         date: parseISO(m.data),
         time: formatDistanceToNow(parseISO(m.data), { addSuffix: true, locale: pt }),
       });
