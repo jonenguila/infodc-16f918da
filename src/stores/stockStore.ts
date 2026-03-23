@@ -397,6 +397,14 @@ export function useStockStore() {
             stock_atual: prod.stockAtual + pp.quantidade,
           }).eq("id", pp.produtoId);
         }
+        // Create cancelamento movement record
+        await supabase.from("stock_movimentos").insert({
+          produto_id: pp.produtoId, produto_nome: pp.produtoNome,
+          tipo: "cancelamento", quantidade: pp.quantidade,
+          data: format(new Date(), "yyyy-MM-dd"),
+          responsavel: pedido.nomeRequisitante || pedido.responsavelLevantamento || "",
+          evento: pedido.nomeEvento || pedido.tipoEvento || "",
+        });
       }
     }
 
