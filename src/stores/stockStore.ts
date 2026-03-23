@@ -134,7 +134,7 @@ async function fetchAll() {
 
   _movimentos = (mRes.data || []).map((m: any) => ({
     id: m.id, produtoId: m.produto_id, produtoNome: m.produto_nome,
-    tipo: m.tipo as "levantamento" | "devolucao",
+    tipo: m.tipo as Movimento["tipo"],
     quantidade: m.quantidade, data: m.data, responsavel: m.responsavel || "", evento: m.evento || "",
   }));
 
