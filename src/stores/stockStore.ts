@@ -28,7 +28,7 @@ export interface Movimento {
   id: string;
   produtoId: string | null;
   produtoNome: string;
-  tipo: "levantamento" | "devolucao" | "pedido" | "cancelamento";
+  tipo: "levantamento" | "devolucao" | "pedido" | "cancelamento" | "entrega";
   quantidade: number;
   data: string;
   responsavel: string;
