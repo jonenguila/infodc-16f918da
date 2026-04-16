@@ -393,6 +393,16 @@ export function useStockStore() {
       });
     }
 
+    // Notificar Jorge (jorg.mig.fsr@gmail.com) sobre novo pedido
+    const JORGE_USER_ID = "8f524952-b0bc-442e-a407-0532849a7945";
+    const produtosResumo = pedidoData.produtos.map(p => `${p.produtoNome} (${p.quantidade})`).join(", ");
+    await supabase.from("notificacoes").insert({
+      user_id: JORGE_USER_ID,
+      mensagem: `Novo pedido ${numero} criado por ${pedidoData.nomeRequisitante} — ${produtosResumo}`,
+      tipo: "pedido",
+      referencia: numero,
+    });
+
     await fetchAll();
     return null;
   };
