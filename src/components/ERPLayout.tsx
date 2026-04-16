@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ERPSidebar } from "@/components/ERPSidebar";
 import { NotificationListener } from "@/components/NotificationListener";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const STORAGE_KEY = "erp-sidebar-collapsed";
 
@@ -23,6 +24,9 @@ export function ERPLayout({ children }: ERPLayoutProps) {
       <ERPSidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
       <main className="flex-1 overflow-auto light-content bg-background text-foreground transition-all duration-300">
         <NotificationListener />
+        <div className="flex items-center justify-end px-6 py-3 border-b border-border">
+          <NotificationBell />
+        </div>
         {children}
       </main>
     </div>
