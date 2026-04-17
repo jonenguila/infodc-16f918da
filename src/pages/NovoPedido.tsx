@@ -118,6 +118,28 @@ const NovoPedido = () => {
       return;
     }
 
+    // Enviar notificação por email (não bloqueia o fluxo se falhar)
+    try {
+      const { error: emailError } = await supabase.functions.invoke("send-pedido-notification", {
+        body: {
+          dataPedido: dataPedido!.toISOString(),
+          nomeRequisitante,
+          email,
+          tipoEvento,
+          nomeEvento,
+          dataEvento: dataEvento!.toISOString(),
+          dataRecolha: dataRecolha!.toISOString(),
+          responsavelLevantamento,
+          prioridade,
+          observacoes,
+          produtos: produtosPedido.map((pp) => ({ produtoNome: pp.produtoNome, quantidade: pp.quantidade })),
+        },
+      });
+      if (emailError) console.error("Falha ao enviar notificação por email:", emailError);
+    } catch (e) {
+      console.error("Erro inesperado no envio de email:", e);
+    }
+
     toast({ title: "Pedido criado com sucesso!", description: `Pedido com ${produtosPedido.length} produto(s) registado. Stock atualizado.` });
     limpar();
   };
