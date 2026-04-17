@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      comunicacao_cards: {
+        Row: {
+          abrir_nova_aba: boolean
+          cor: string
+          created_at: string
+          descricao: string
+          icone: string
+          id: string
+          link: string
+          ordem: number
+          seccao: string
+          texto_botao: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          abrir_nova_aba?: boolean
+          cor?: string
+          created_at?: string
+          descricao?: string
+          icone?: string
+          id?: string
+          link?: string
+          ordem?: number
+          seccao: string
+          texto_botao?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          abrir_nova_aba?: boolean
+          cor?: string
+          created_at?: string
+          descricao?: string
+          icone?: string
+          id?: string
+          link?: string
+          ordem?: number
+          seccao?: string
+          texto_botao?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notificacoes: {
         Row: {
           created_at: string
