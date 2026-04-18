@@ -59,6 +59,51 @@ export type Database = {
         }
         Relationships: []
       }
+      email_logs: {
+        Row: {
+          assunto: string
+          cc: string[] | null
+          created_at: string
+          destinatarios: string[]
+          erro: string | null
+          estado: string
+          funcao: string
+          id: string
+          payload: Json | null
+          referencia: string | null
+          remetente: string
+          resend_id: string | null
+        }
+        Insert: {
+          assunto: string
+          cc?: string[] | null
+          created_at?: string
+          destinatarios?: string[]
+          erro?: string | null
+          estado?: string
+          funcao: string
+          id?: string
+          payload?: Json | null
+          referencia?: string | null
+          remetente: string
+          resend_id?: string | null
+        }
+        Update: {
+          assunto?: string
+          cc?: string[] | null
+          created_at?: string
+          destinatarios?: string[]
+          erro?: string | null
+          estado?: string
+          funcao?: string
+          id?: string
+          payload?: Json | null
+          referencia?: string | null
+          remetente?: string
+          resend_id?: string | null
+        }
+        Relationships: []
+      }
       notificacoes: {
         Row: {
           created_at: string
