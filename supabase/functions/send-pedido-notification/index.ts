@@ -154,9 +154,8 @@ Deno.serve(async (req) => {
         'X-Connection-Api-Key': RESEND_API_KEY,
       },
       body: JSON.stringify({
-        from: 'Plataforma Data CoLAB <noreply@datacolab.pt>',
-        to: ['jorge.rodrigues@datacolab.pt'],
-        cc: ['paula.sampaio@datacolab.pt'],
+        from: 'Plataforma Data CoLAB <onboarding@resend.dev>',
+        to: ['jorge.pinto@datacolab.pt'],
         reply_to: body.email,
         subject,
         html,

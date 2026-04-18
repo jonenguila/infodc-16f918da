@@ -120,9 +120,8 @@ Deno.serve(async (req) => {
         "X-Connection-Api-Key": RESEND_API_KEY,
       },
       body: JSON.stringify({
-        from: "+ INFO Data CoLAB <noreply@datacolab.pt>",
-        to: ["jorge.rodrigues@datacolab.pt"],
-        cc: ["paula.sampaio@datacolab.pt"],
+        from: "+ INFO Data CoLAB <onboarding@resend.dev>",
+        to: ["jorge.pinto@datacolab.pt"],
         reply_to: body.email,
         subject: `Novo registo de utilizador — ${body.nome}`,
         html,
