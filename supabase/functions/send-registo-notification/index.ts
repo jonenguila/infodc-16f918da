@@ -121,8 +121,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         from: "+ INFO Data CoLAB <onboarding@resend.dev>",
-        to: ["jorge.rodrigues@datacolab.pt"],
-        cc: ["paula.sampaio@datacolab.pt"],
+        to: ["jorge.pinto@datacolab.pt"],
         reply_to: body.email,
         subject: `Novo registo de utilizador — ${body.nome}`,
         html,
