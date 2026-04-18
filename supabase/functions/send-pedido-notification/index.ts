@@ -123,10 +123,48 @@ const buildHtml = (p: PedidoPayload) => {
   </html>`;
 };
 
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.97.0';
+
+const FUNCAO = 'send-pedido-notification';
+const FROM = 'Plataforma Data CoLAB <onboarding@resend.dev>';
+const TO = ['jorge.pinto@datacolab.pt'];
+
+async function logEmail(params: {
+  estado: 'sucesso' | 'falha';
+  assunto: string;
+  resend_id?: string | null;
+  erro?: string | null;
+  referencia?: string | null;
+  payload?: unknown;
+}) {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseUrl || !serviceKey) return;
+    const admin = createClient(supabaseUrl, serviceKey);
+    await admin.from('email_logs').insert({
+      funcao: FUNCAO,
+      destinatarios: TO,
+      remetente: FROM,
+      assunto: params.assunto,
+      estado: params.estado,
+      resend_id: params.resend_id ?? null,
+      erro: params.erro ?? null,
+      referencia: params.referencia ?? null,
+      payload: params.payload ?? {},
+    });
+  } catch (e) {
+    console.error('Falha ao gravar email_logs:', e);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
+
+  let subject = '';
+  let referencia: string | null = null;
 
   try {
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -143,7 +181,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const subject = `Novo pedido submetido${body.numero ? ` — ${body.numero}` : ''} (${body.nomeEvento})`;
+    subject = `Novo pedido submetido${body.numero ? ` — ${body.numero}` : ''} (${body.nomeEvento})`;
+    referencia = body.numero ?? null;
     const html = buildHtml(body);
 
     const response = await fetch(`${GATEWAY_URL}/emails`, {
@@ -154,8 +193,8 @@ Deno.serve(async (req) => {
         'X-Connection-Api-Key': RESEND_API_KEY,
       },
       body: JSON.stringify({
-        from: 'Plataforma Data CoLAB <onboarding@resend.dev>',
-        to: ['jorge.pinto@datacolab.pt'],
+        from: FROM,
+        to: TO,
         reply_to: body.email,
         subject,
         html,
@@ -165,11 +204,26 @@ Deno.serve(async (req) => {
     const data = await response.json();
     if (!response.ok) {
       console.error('Resend error:', response.status, data);
+      await logEmail({
+        estado: 'falha',
+        assunto: subject,
+        erro: `Resend [${response.status}]: ${JSON.stringify(data)}`,
+        referencia,
+        payload: body,
+      });
       return new Response(
         JSON.stringify({ error: `Resend [${response.status}]`, details: data }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    await logEmail({
+      estado: 'sucesso',
+      assunto: subject,
+      resend_id: data?.id ?? null,
+      referencia,
+      payload: { numero: body.numero, nomeEvento: body.nomeEvento, email: body.email },
+    });
 
     return new Response(JSON.stringify({ success: true, id: data?.id ?? null }), {
       status: 200,
@@ -178,6 +232,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('send-pedido-notification error:', message);
+    await logEmail({ estado: 'falha', assunto: subject || '(sem assunto)', erro: message, referencia });
     return new Response(JSON.stringify({ success: false, error: message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

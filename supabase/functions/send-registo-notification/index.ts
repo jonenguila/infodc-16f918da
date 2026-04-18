@@ -70,10 +70,47 @@ function buildHtml(data: RegistoPayload, dataHora: string): string {
   </html>`;
 }
 
+const FUNCAO = 'send-registo-notification';
+const FROM = '+ INFO Data CoLAB <onboarding@resend.dev>';
+const TO = ['jorge.pinto@datacolab.pt'];
+
+async function logEmail(admin: ReturnType<typeof createClient> | null, params: {
+  estado: 'sucesso' | 'falha';
+  assunto: string;
+  resend_id?: string | null;
+  erro?: string | null;
+  referencia?: string | null;
+  payload?: unknown;
+}) {
+  if (!admin) return;
+  try {
+    await admin.from('email_logs').insert({
+      funcao: FUNCAO,
+      destinatarios: TO,
+      remetente: FROM,
+      assunto: params.assunto,
+      estado: params.estado,
+      resend_id: params.resend_id ?? null,
+      erro: params.erro ?? null,
+      referencia: params.referencia ?? null,
+      payload: params.payload ?? {},
+    });
+  } catch (e) {
+    console.error('Falha ao gravar email_logs:', e);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const admin = supabaseUrl && serviceRoleKey ? createClient(supabaseUrl, serviceRoleKey) : null;
+
+  let subject = '';
+  let referencia: string | null = null;
 
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -89,12 +126,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Tentar enriquecer com user_id a partir do profile (se não vier)
-    if (!body.user_id) {
+    referencia = body.user_id ?? body.email ?? null;
+
+    if (!body.user_id && admin) {
       try {
-        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-        const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-        const admin = createClient(supabaseUrl, serviceRoleKey);
         const { data: profile } = await admin
           .from("profiles")
           .select("user_id, cargo")
@@ -103,6 +138,7 @@ Deno.serve(async (req) => {
         if (profile) {
           body.user_id = profile.user_id;
           if (!body.cargo) body.cargo = profile.cargo ?? undefined;
+          referencia = body.user_id;
         }
       } catch (_e) {
         // não bloqueia o envio
@@ -111,6 +147,7 @@ Deno.serve(async (req) => {
 
     const dataHora = new Date().toLocaleString("pt-PT", { timeZone: "Europe/Lisbon" });
     const html = buildHtml(body, dataHora);
+    subject = `Novo registo de utilizador — ${body.nome}`;
 
     const response = await fetch(`${GATEWAY_URL}/emails`, {
       method: "POST",
@@ -120,10 +157,10 @@ Deno.serve(async (req) => {
         "X-Connection-Api-Key": RESEND_API_KEY,
       },
       body: JSON.stringify({
-        from: "+ INFO Data CoLAB <onboarding@resend.dev>",
-        to: ["jorge.pinto@datacolab.pt"],
+        from: FROM,
+        to: TO,
         reply_to: body.email,
-        subject: `Novo registo de utilizador — ${body.nome}`,
+        subject,
         html,
       }),
     });
@@ -131,11 +168,26 @@ Deno.serve(async (req) => {
     const result = await response.json();
     if (!response.ok) {
       console.error("Resend error", response.status, result);
+      await logEmail(admin, {
+        estado: 'falha',
+        assunto: subject,
+        erro: `Resend [${response.status}]: ${JSON.stringify(result)}`,
+        referencia,
+        payload: { nome: body.nome, email: body.email, cargo: body.cargo },
+      });
       return new Response(JSON.stringify({ success: false, error: result }), {
         status: response.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    await logEmail(admin, {
+      estado: 'sucesso',
+      assunto: subject,
+      resend_id: result?.id ?? null,
+      referencia,
+      payload: { nome: body.nome, email: body.email, cargo: body.cargo },
+    });
 
     return new Response(JSON.stringify({ success: true, id: result?.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -143,6 +195,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Erro desconhecido";
     console.error("send-registo-notification error", msg);
+    await logEmail(admin, { estado: 'falha', assunto: subject || '(sem assunto)', erro: msg, referencia });
     return new Response(JSON.stringify({ error: msg }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
