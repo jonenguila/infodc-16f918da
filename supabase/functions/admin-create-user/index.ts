@@ -97,6 +97,25 @@ Deno.serve(async (req) => {
         .eq("user_id", newUser.user.id);
     }
 
+    // Notificação de novo registo (criado pelo admin) — não bloqueia
+    try {
+      await fetch(`${supabaseUrl}/functions/v1/send-registo-notification`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${serviceRoleKey}`,
+        },
+        body: JSON.stringify({
+          user_id: newUser.user?.id,
+          nome,
+          email,
+          cargo,
+        }),
+      });
+    } catch (e) {
+      console.error("Falha ao enviar notificação de registo (admin):", e);
+    }
+
     return new Response(JSON.stringify({ success: true, user_id: newUser.user?.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

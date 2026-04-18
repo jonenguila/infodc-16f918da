@@ -108,6 +108,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq("user_id", authData.user.id);
     }
 
+    // Notificação de novo registo (não bloqueia o fluxo se falhar)
+    try {
+      await supabase.functions.invoke("send-registo-notification", {
+        body: {
+          user_id: authData.user?.id,
+          nome: data.nome,
+          email: data.email,
+          cargo: data.cargo,
+        },
+      });
+    } catch (e) {
+      console.error("Falha ao enviar notificação de registo:", e);
+    }
+
     return { success: true };
   };
 

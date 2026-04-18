@@ -1,1 +1,4 @@
 project_id = "dpemzxkztwgfieiuxhej"
+
+[functions.send-registo-notification]
+verify_jwt = false
