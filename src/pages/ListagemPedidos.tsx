@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { pt } from "date-fns/locale";
-import { Search, ClipboardList, CalendarIcon, Eye, Download } from "lucide-react";
+import { Search, ClipboardList, CalendarIcon, Eye, Download, Pencil, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -13,7 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -25,6 +27,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useStockStore, type Pedido } from "@/stores/stockStore";
+import { useToast } from "@/hooks/use-toast";
 
 const estadoStyles: Record<string, string> = {
   Pendente: "bg-amber-100 text-amber-700",
@@ -42,7 +45,8 @@ const prioridadeStyles: Record<string, string> = {
 const ITEMS_PER_PAGE = 10;
 
 const ListagemPedidos = () => {
-  const { pedidos, atualizarEstadoPedido } = useStockStore();
+  const { pedidos, atualizarEstadoPedido, editarPedido, eliminarPedido } = useStockStore();
+  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [filtroPrioridade, setFiltroPrioridade] = useState("todos");
@@ -50,7 +54,68 @@ const ListagemPedidos = () => {
   const [filtroDataAte, setFiltroDataAte] = useState<Date>();
   const [detalhePedido, setDetalhePedido] = useState<Pedido | null>(null);
   const [pedidoCancelar, setPedidoCancelar] = useState<Pedido | null>(null);
+  const [pedidoEditar, setPedidoEditar] = useState<Pedido | null>(null);
+  const [pedidoEliminar, setPedidoEliminar] = useState<Pedido | null>(null);
+  const [reporStockEliminar, setReporStockEliminar] = useState(true);
+  const [editForm, setEditForm] = useState({
+    nomeRequisitante: "",
+    email: "",
+    dataPedido: "",
+    tipoEvento: "",
+    nomeEvento: "",
+    responsavelLevantamento: "",
+    prioridade: "Média" as Pedido["prioridade"],
+    observacoes: "",
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deletingPedido, setDeletingPedido] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+
+  const openEditar = (p: Pedido) => {
+    setEditForm({
+      nomeRequisitante: p.nomeRequisitante,
+      email: p.email,
+      dataPedido: p.dataPedido,
+      tipoEvento: p.tipoEvento || "",
+      nomeEvento: p.nomeEvento || "",
+      responsavelLevantamento: p.responsavelLevantamento || "",
+      prioridade: p.prioridade,
+      observacoes: p.observacoes || "",
+    });
+    setPedidoEditar(p);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!pedidoEditar) return;
+    if (!editForm.nomeRequisitante.trim() || !editForm.email.trim() || !editForm.dataPedido) {
+      toast({ title: "Campos obrigatórios em falta", variant: "destructive" });
+      return;
+    }
+    setSavingEdit(true);
+    const err = await editarPedido(pedidoEditar.id, editForm);
+    setSavingEdit(false);
+    if (err) {
+      toast({ title: "Erro ao guardar", description: err, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Pedido atualizado com sucesso" });
+    setPedidoEditar(null);
+  };
+
+  const handleDelete = async () => {
+    if (!pedidoEliminar) return;
+    setDeletingPedido(true);
+    const err = await eliminarPedido(pedidoEliminar.id, reporStockEliminar);
+    setDeletingPedido(false);
+    if (err) {
+      toast({ title: "Erro ao eliminar", description: err, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Pedido eliminado" });
+    setPedidoEliminar(null);
+    setReporStockEliminar(true);
+  };
+
 
   const filtered = pedidos.filter((p) => {
     if (filtroEstado !== "todos" && p.estado !== filtroEstado) return false;
@@ -230,9 +295,17 @@ const ListagemPedidos = () => {
                   </Select>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetalhePedido(p)}>
-                    <Eye className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" title="Ver detalhes" onClick={() => setDetalhePedido(p)}>
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar pedido" onClick={() => openEditar(p)}>
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="Eliminar pedido" onClick={() => { setPedidoEliminar(p); setReporStockEliminar(p.estado === "Pendente"); }}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -346,6 +419,104 @@ const ListagemPedidos = () => {
               }
             }}>
               Confirmar Cancelamento
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit dialog */}
+      <Dialog open={!!pedidoEditar} onOpenChange={(o) => !o && setPedidoEditar(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar Pedido {pedidoEditar?.numero}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="ed-nome">Requisitante *</Label>
+                <Input id="ed-nome" value={editForm.nomeRequisitante} onChange={(e) => setEditForm((f) => ({ ...f, nomeRequisitante: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="ed-email">Email *</Label>
+                <Input id="ed-email" type="email" value={editForm.email} onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="ed-data">Data do Pedido *</Label>
+                <Input id="ed-data" type="date" value={editForm.dataPedido} onChange={(e) => setEditForm((f) => ({ ...f, dataPedido: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="ed-prio">Prioridade</Label>
+                <Select value={editForm.prioridade} onValueChange={(v) => setEditForm((f) => ({ ...f, prioridade: v as Pedido["prioridade"] }))}>
+                  <SelectTrigger id="ed-prio"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Baixa">Baixa</SelectItem>
+                    <SelectItem value="Média">Média</SelectItem>
+                    <SelectItem value="Alta">Alta</SelectItem>
+                    <SelectItem value="Urgente">Urgente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="ed-tipo">Tipo de Evento</Label>
+                <Input id="ed-tipo" value={editForm.tipoEvento} onChange={(e) => setEditForm((f) => ({ ...f, tipoEvento: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="ed-evento">Nome do Evento</Label>
+                <Input id="ed-evento" value={editForm.nomeEvento} onChange={(e) => setEditForm((f) => ({ ...f, nomeEvento: e.target.value }))} />
+              </div>
+              <div className="space-y-1 col-span-2">
+                <Label htmlFor="ed-resp">Responsável pelo Levantamento</Label>
+                <Input id="ed-resp" value={editForm.responsavelLevantamento} onChange={(e) => setEditForm((f) => ({ ...f, responsavelLevantamento: e.target.value }))} />
+              </div>
+              <div className="space-y-1 col-span-2">
+                <Label htmlFor="ed-obs">Observações</Label>
+                <Textarea id="ed-obs" rows={3} value={editForm.observacoes} onChange={(e) => setEditForm((f) => ({ ...f, observacoes: e.target.value }))} />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Nota: a edição não altera produtos, quantidades nem o estado do pedido (use o seletor da listagem para alterar o estado).
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPedidoEditar(null)} disabled={savingEdit}>Cancelar</Button>
+            <Button onClick={handleSaveEdit} disabled={savingEdit}>{savingEdit ? "A guardar..." : "Guardar alterações"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!pedidoEliminar} onOpenChange={(o) => { if (!o) { setPedidoEliminar(null); setReporStockEliminar(true); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar pedido {pedidoEliminar?.numero}?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                Esta ação eliminará permanentemente o pedido de <strong>{pedidoEliminar?.nomeRequisitante}</strong> da base de dados.
+              </span>
+              {pedidoEliminar?.estado === "Pendente" && (
+                <span className="flex items-start gap-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-amber-800 dark:text-amber-300">
+                  <Checkbox
+                    id="repor-stock"
+                    checked={reporStockEliminar}
+                    onCheckedChange={(v) => setReporStockEliminar(v === true)}
+                    className="mt-0.5"
+                  />
+                  <label htmlFor="repor-stock" className="text-sm cursor-pointer">
+                    Repor stock dos produtos (o pedido está Pendente — recomendado).
+                  </label>
+                </span>
+              )}
+              <span className="block text-xs text-muted-foreground">Esta ação não pode ser revertida.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingPedido}>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deletingPedido}
+              onClick={(e) => { e.preventDefault(); handleDelete(); }}
+            >
+              {deletingPedido ? "A eliminar..." : "Eliminar definitivamente"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
