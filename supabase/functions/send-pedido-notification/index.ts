@@ -123,13 +123,96 @@ const buildHtml = (p: PedidoPayload) => {
   </html>`;
 };
 
+const buildConfirmationHtml = (p: PedidoPayload) => {
+  const submittedAt = new Date().toLocaleString('pt-PT', {
+    dateStyle: 'short', timeStyle: 'short',
+  });
+
+  const produtosRows = p.produtos
+    .map(
+      (pr) => `
+        <tr>
+          <td style="padding:8px 12px;border:1px solid #e5e7eb;">${escapeHtml(pr.produtoNome)}</td>
+          <td style="padding:8px 12px;border:1px solid #e5e7eb;text-align:right;">${pr.quantidade}</td>
+        </tr>`
+    )
+    .join('');
+
+  const row = (label: string, value: string) => `
+    <tr>
+      <td style="padding:6px 12px;color:#6b7280;font-size:13px;width:200px;">${label}</td>
+      <td style="padding:6px 12px;color:#111827;font-size:14px;font-weight:500;">${escapeHtml(value || '—')}</td>
+    </tr>`;
+
+  return `
+  <!DOCTYPE html>
+  <html lang="pt">
+    <body style="margin:0;padding:0;background:#f5f7fa;font-family:Inter,Arial,sans-serif;color:#111827;">
+      <div style="max-width:640px;margin:24px auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+        <div style="background:#1E3A5F;color:#ffffff;padding:20px 24px;">
+          <h1 style="margin:0;font-size:18px;font-weight:600;">Pedido recebido${p.numero ? ` — ${escapeHtml(p.numero)}` : ''}</h1>
+          <p style="margin:6px 0 0;font-size:13px;opacity:0.85;">Confirmação · Data CoLAB</p>
+        </div>
+
+        <div style="padding:20px 24px;">
+          <p style="margin:0 0 16px;font-size:14px;color:#374151;">
+            Olá <strong>${escapeHtml(p.nomeRequisitante)}</strong>,
+          </p>
+          <p style="margin:0 0 16px;font-size:14px;color:#374151;">
+            Confirmamos a receção do seu pedido em <strong>${escapeHtml(submittedAt)}</strong>.
+            A equipa de gestão de stock irá analisar o pedido e entrar em contacto consigo se necessário.
+          </p>
+
+          <h2 style="margin:24px 0 8px;font-size:14px;color:#1E3A5F;text-transform:uppercase;letter-spacing:0.5px;">Resumo do pedido</h2>
+          <table style="width:100%;border-collapse:collapse;">
+            ${p.numero ? row('Nº pedido', p.numero) : ''}
+            ${row('Evento', p.nomeEvento)}
+            ${row('Tipo de evento', p.tipoEvento)}
+            ${row('Data do evento', formatDate(p.dataEvento))}
+            ${row('Data de recolha', formatDate(p.dataRecolha))}
+            ${row('Responsável levantamento', p.responsavelLevantamento)}
+            ${row('Prioridade', p.prioridade)}
+          </table>
+
+          <h2 style="margin:24px 0 8px;font-size:14px;color:#1E3A5F;text-transform:uppercase;letter-spacing:0.5px;">Produtos solicitados</h2>
+          <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;font-size:14px;">
+            <thead>
+              <tr style="background:#f9fafb;">
+                <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left;font-size:12px;color:#6b7280;">Produto</th>
+                <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:right;font-size:12px;color:#6b7280;width:100px;">Quantidade</th>
+              </tr>
+            </thead>
+            <tbody>${produtosRows}</tbody>
+          </table>
+
+          ${
+            p.observacoes
+              ? `<h2 style="margin:24px 0 8px;font-size:14px;color:#1E3A5F;text-transform:uppercase;letter-spacing:0.5px;">Observações</h2>
+                 <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;font-size:14px;color:#374151;white-space:pre-wrap;">${escapeHtml(p.observacoes)}</div>`
+              : ''
+          }
+
+          <p style="margin:28px 0 8px;font-size:13px;color:#374151;">
+            Pode acompanhar o estado do seu pedido na plataforma <strong>+InfoDataCoLAB</strong>, na secção <em>Stock → Listagem de Pedidos</em>.
+          </p>
+
+          <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;">
+            Este é um email automático de confirmação. Não responda diretamente — para qualquer questão contacte a equipa de gestão.
+          </p>
+        </div>
+      </div>
+    </body>
+  </html>`;
+};
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.97.0';
 
-const FUNCAO = 'send-pedido-notification';
 const FROM = 'Plataforma Data CoLAB <onboarding@resend.dev>';
-const TO = ['jorge.pinto@datacolab.pt'];
+const TO_INTERNO = ['jorge.pinto@datacolab.pt'];
 
 async function logEmail(params: {
+  funcao: string;
+  destinatarios: string[];
   estado: 'sucesso' | 'falha';
   assunto: string;
   resend_id?: string | null;
@@ -143,8 +226,8 @@ async function logEmail(params: {
     if (!supabaseUrl || !serviceKey) return;
     const admin = createClient(supabaseUrl, serviceKey);
     await admin.from('email_logs').insert({
-      funcao: FUNCAO,
-      destinatarios: TO,
+      funcao: params.funcao,
+      destinatarios: params.destinatarios,
       remetente: FROM,
       assunto: params.assunto,
       estado: params.estado,
@@ -158,12 +241,39 @@ async function logEmail(params: {
   }
 }
 
+async function sendEmail(opts: {
+  lovableKey: string;
+  resendKey: string;
+  to: string[];
+  reply_to?: string;
+  subject: string;
+  html: string;
+}) {
+  const response = await fetch(`${GATEWAY_URL}/emails`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${opts.lovableKey}`,
+      'X-Connection-Api-Key': opts.resendKey,
+    },
+    body: JSON.stringify({
+      from: FROM,
+      to: opts.to,
+      ...(opts.reply_to ? { reply_to: opts.reply_to } : {}),
+      subject: opts.subject,
+      html: opts.html,
+    }),
+  });
+  const data = await response.json();
+  return { ok: response.ok, status: response.status, data };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  let subject = '';
+  let internoSubject = '';
   let referencia: string | null = null;
 
   try {
@@ -181,58 +291,118 @@ Deno.serve(async (req) => {
       });
     }
 
-    subject = `Novo pedido submetido${body.numero ? ` — ${body.numero}` : ''} (${body.nomeEvento})`;
+    internoSubject = `Novo pedido submetido${body.numero ? ` — ${body.numero}` : ''} (${body.nomeEvento})`;
     referencia = body.numero ?? null;
-    const html = buildHtml(body);
 
-    const response = await fetch(`${GATEWAY_URL}/emails`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'X-Connection-Api-Key': RESEND_API_KEY,
-      },
-      body: JSON.stringify({
-        from: FROM,
-        to: TO,
-        reply_to: body.email,
-        subject,
-        html,
-      }),
+    // 1. Email interno (gestão)
+    const interno = await sendEmail({
+      lovableKey: LOVABLE_API_KEY,
+      resendKey: RESEND_API_KEY,
+      to: TO_INTERNO,
+      reply_to: body.email,
+      subject: internoSubject,
+      html: buildHtml(body),
     });
 
-    const data = await response.json();
-    if (!response.ok) {
-      console.error('Resend error:', response.status, data);
+    if (!interno.ok) {
+      console.error('Resend (interno) error:', interno.status, interno.data);
       await logEmail({
+        funcao: 'send-pedido-notification',
+        destinatarios: TO_INTERNO,
         estado: 'falha',
-        assunto: subject,
-        erro: `Resend [${response.status}]: ${JSON.stringify(data)}`,
+        assunto: internoSubject,
+        erro: `Resend [${interno.status}]: ${JSON.stringify(interno.data)}`,
         referencia,
         payload: body,
       });
       return new Response(
-        JSON.stringify({ error: `Resend [${response.status}]`, details: data }),
+        JSON.stringify({ error: `Resend [${interno.status}]`, details: interno.data }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     await logEmail({
+      funcao: 'send-pedido-notification',
+      destinatarios: TO_INTERNO,
       estado: 'sucesso',
-      assunto: subject,
-      resend_id: data?.id ?? null,
+      assunto: internoSubject,
+      resend_id: interno.data?.id ?? null,
       referencia,
       payload: { numero: body.numero, nomeEvento: body.nomeEvento, email: body.email },
     });
 
-    return new Response(JSON.stringify({ success: true, id: data?.id ?? null }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    // 2. Email de confirmação ao requisitante (best-effort: não falha o pedido)
+    const confirmSubject = `Pedido recebido${body.numero ? ` — ${body.numero}` : ''} · Data CoLAB`;
+    let confirmacaoEnviada = false;
+    let confirmacaoId: string | null = null;
+    let confirmacaoErro: string | null = null;
+
+    try {
+      const confirmRes = await sendEmail({
+        lovableKey: LOVABLE_API_KEY,
+        resendKey: RESEND_API_KEY,
+        to: [body.email],
+        subject: confirmSubject,
+        html: buildConfirmationHtml(body),
+      });
+
+      if (confirmRes.ok) {
+        confirmacaoEnviada = true;
+        confirmacaoId = confirmRes.data?.id ?? null;
+        await logEmail({
+          funcao: 'send-pedido-confirmation',
+          destinatarios: [body.email],
+          estado: 'sucesso',
+          assunto: confirmSubject,
+          resend_id: confirmacaoId,
+          referencia,
+          payload: { numero: body.numero, nomeEvento: body.nomeEvento, email: body.email },
+        });
+      } else {
+        confirmacaoErro = `Resend [${confirmRes.status}]: ${JSON.stringify(confirmRes.data)}`;
+        console.warn('Confirmação não enviada (esperado se domínio não verificado):', confirmacaoErro);
+        await logEmail({
+          funcao: 'send-pedido-confirmation',
+          destinatarios: [body.email],
+          estado: 'falha',
+          assunto: confirmSubject,
+          erro: confirmacaoErro,
+          referencia,
+          payload: { numero: body.numero, email: body.email },
+        });
+      }
+    } catch (e) {
+      confirmacaoErro = e instanceof Error ? e.message : 'Unknown error';
+      console.warn('Erro envio confirmação:', confirmacaoErro);
+      await logEmail({
+        funcao: 'send-pedido-confirmation',
+        destinatarios: [body.email],
+        estado: 'falha',
+        assunto: confirmSubject,
+        erro: confirmacaoErro,
+        referencia,
+      });
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        id: interno.data?.id ?? null,
+        confirmacao: { enviada: confirmacaoEnviada, id: confirmacaoId, erro: confirmacaoErro },
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('send-pedido-notification error:', message);
-    await logEmail({ estado: 'falha', assunto: subject || '(sem assunto)', erro: message, referencia });
+    await logEmail({
+      funcao: 'send-pedido-notification',
+      destinatarios: TO_INTERNO,
+      estado: 'falha',
+      assunto: internoSubject || '(sem assunto)',
+      erro: message,
+      referencia,
+    });
     return new Response(JSON.stringify({ success: false, error: message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
