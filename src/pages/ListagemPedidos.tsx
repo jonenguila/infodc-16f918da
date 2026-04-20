@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { pt } from "date-fns/locale";
-import { Search, ClipboardList, CalendarIcon, Eye, Download } from "lucide-react";
+import { Search, ClipboardList, CalendarIcon, Eye, Download, Pencil, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -13,7 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -25,6 +27,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useStockStore, type Pedido } from "@/stores/stockStore";
+import { useToast } from "@/hooks/use-toast";
 
 const estadoStyles: Record<string, string> = {
   Pendente: "bg-amber-100 text-amber-700",
@@ -42,7 +45,8 @@ const prioridadeStyles: Record<string, string> = {
 const ITEMS_PER_PAGE = 10;
 
 const ListagemPedidos = () => {
-  const { pedidos, atualizarEstadoPedido } = useStockStore();
+  const { pedidos, atualizarEstadoPedido, editarPedido, eliminarPedido } = useStockStore();
+  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [filtroPrioridade, setFiltroPrioridade] = useState("todos");
@@ -50,7 +54,68 @@ const ListagemPedidos = () => {
   const [filtroDataAte, setFiltroDataAte] = useState<Date>();
   const [detalhePedido, setDetalhePedido] = useState<Pedido | null>(null);
   const [pedidoCancelar, setPedidoCancelar] = useState<Pedido | null>(null);
+  const [pedidoEditar, setPedidoEditar] = useState<Pedido | null>(null);
+  const [pedidoEliminar, setPedidoEliminar] = useState<Pedido | null>(null);
+  const [reporStockEliminar, setReporStockEliminar] = useState(true);
+  const [editForm, setEditForm] = useState({
+    nomeRequisitante: "",
+    email: "",
+    dataPedido: "",
+    tipoEvento: "",
+    nomeEvento: "",
+    responsavelLevantamento: "",
+    prioridade: "Média" as Pedido["prioridade"],
+    observacoes: "",
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deletingPedido, setDeletingPedido] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+
+  const openEditar = (p: Pedido) => {
+    setEditForm({
+      nomeRequisitante: p.nomeRequisitante,
+      email: p.email,
+      dataPedido: p.dataPedido,
+      tipoEvento: p.tipoEvento || "",
+      nomeEvento: p.nomeEvento || "",
+      responsavelLevantamento: p.responsavelLevantamento || "",
+      prioridade: p.prioridade,
+      observacoes: p.observacoes || "",
+    });
+    setPedidoEditar(p);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!pedidoEditar) return;
+    if (!editForm.nomeRequisitante.trim() || !editForm.email.trim() || !editForm.dataPedido) {
+      toast({ title: "Campos obrigatórios em falta", variant: "destructive" });
+      return;
+    }
+    setSavingEdit(true);
+    const err = await editarPedido(pedidoEditar.id, editForm);
+    setSavingEdit(false);
+    if (err) {
+      toast({ title: "Erro ao guardar", description: err, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Pedido atualizado com sucesso" });
+    setPedidoEditar(null);
+  };
+
+  const handleDelete = async () => {
+    if (!pedidoEliminar) return;
+    setDeletingPedido(true);
+    const err = await eliminarPedido(pedidoEliminar.id, reporStockEliminar);
+    setDeletingPedido(false);
+    if (err) {
+      toast({ title: "Erro ao eliminar", description: err, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Pedido eliminado" });
+    setPedidoEliminar(null);
+    setReporStockEliminar(true);
+  };
+
 
   const filtered = pedidos.filter((p) => {
     if (filtroEstado !== "todos" && p.estado !== filtroEstado) return false;
