@@ -445,6 +445,44 @@ export function useStockStore() {
     await fetchAll();
   };
 
+  const editarPedido = async (
+    pedidoId: string,
+    updates: Partial<Pick<Pedido, "nomeRequisitante" | "email" | "dataPedido" | "tipoEvento" | "nomeEvento" | "responsavelLevantamento" | "prioridade" | "observacoes">>
+  ): Promise<string | null> => {
+    const dbUpdates: Record<string, any> = {};
+    if (updates.nomeRequisitante !== undefined) dbUpdates.nome_requisitante = updates.nomeRequisitante;
+    if (updates.email !== undefined) dbUpdates.email = updates.email;
+    if (updates.dataPedido !== undefined) dbUpdates.data_pedido = updates.dataPedido;
+    if (updates.tipoEvento !== undefined) dbUpdates.tipo_evento = updates.tipoEvento;
+    if (updates.nomeEvento !== undefined) dbUpdates.nome_evento = updates.nomeEvento;
+    if (updates.responsavelLevantamento !== undefined) dbUpdates.responsavel_levantamento = updates.responsavelLevantamento;
+    if (updates.prioridade !== undefined) dbUpdates.prioridade = updates.prioridade;
+    if (updates.observacoes !== undefined) dbUpdates.observacoes = updates.observacoes;
+    const { error } = await supabase.from("stock_pedidos").update(dbUpdates).eq("id", pedidoId);
+    if (error) return error.message;
+    await fetchAll();
+    return null;
+  };
+
+  const eliminarPedido = async (pedidoId: string, reporStock: boolean): Promise<string | null> => {
+    const pedido = _pedidos.find((p) => p.id === pedidoId);
+    if (!pedido) return "Pedido não encontrado";
+    if (reporStock && pedido.estado === "Pendente") {
+      for (const pp of pedido.produtos) {
+        const prod = _produtos.find((p) => p.id === pp.produtoId);
+        if (prod) {
+          await supabase.from("stock_produtos").update({
+            stock_atual: prod.stockAtual + pp.quantidade,
+          }).eq("id", pp.produtoId);
+        }
+      }
+    }
+    const { error } = await supabase.from("stock_pedidos").delete().eq("id", pedidoId);
+    if (error) return error.message;
+    await fetchAll();
+    return null;
+  };
+
   const criarLevantamento = async (produtoId: string, quantidade: number, responsavel: string, evento: string, data: string): Promise<string | null> => {
     const produto = _produtos.find((p) => p.id === produtoId);
     if (!produto) return "Produto não encontrado";
