@@ -48,6 +48,8 @@ const ITEMS_PER_PAGE = 10;
 const ListagemPedidos = () => {
   const { pedidos, atualizarEstadoPedido, editarPedido, eliminarPedido } = useStockStore();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdminOrGestor = user?.perfil === "Administrador" || user?.perfil === "Gestor";
   const [search, setSearch] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [filtroPrioridade, setFiltroPrioridade] = useState("todos");
