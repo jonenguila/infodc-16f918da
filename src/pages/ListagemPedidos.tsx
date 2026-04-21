@@ -302,12 +302,16 @@ const ListagemPedidos = () => {
                     <Button variant="ghost" size="icon" className="h-8 w-8" title="Ver detalhes" onClick={() => setDetalhePedido(p)}>
                       <Eye className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar pedido" onClick={() => openEditar(p)}>
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="Eliminar pedido" onClick={() => { setPedidoEliminar(p); setReporStockEliminar(p.estado === "Pendente"); }}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {isAdminOrGestor && (
+                      <>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar pedido" onClick={() => openEditar(p)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="Eliminar pedido" onClick={() => { setPedidoEliminar(p); setReporStockEliminar(p.estado === "Pendente"); }}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
