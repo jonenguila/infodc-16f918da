@@ -28,6 +28,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useStockStore, type Pedido } from "@/stores/stockStore";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const estadoStyles: Record<string, string> = {
   Pendente: "bg-amber-100 text-amber-700",
