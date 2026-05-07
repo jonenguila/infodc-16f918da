@@ -59,7 +59,7 @@ const StockLocalizacoes = () => {
           <h1 className="text-2xl font-bold text-foreground">Localizações</h1>
           <p className="text-sm text-muted-foreground mt-1">Gerir localizações dos produtos</p>
         </div>
-        <Button onClick={openNew} className="gap-2"><Plus className="w-4 h-4" /> Nova Localização</Button>
+        {isAdminOrGestor && <Button onClick={openNew} className="gap-2"><Plus className="w-4 h-4" /> Nova Localização</Button>}
       </div>
 
       <div className="bg-card rounded-xl border border-border overflow-hidden">
