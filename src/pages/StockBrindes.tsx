@@ -334,14 +334,16 @@ const StockTab = () => {
                     <Badge className={`${estadoStyle[estado]} border-0 text-[11px]`}>{estado}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(p)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => { setDeletingProduct(p); setShowDeleteDialog(true); }}>
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
+                    {isAdminOrGestor ? (
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(p)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => { setDeletingProduct(p); setShowDeleteDialog(true); }}>
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ) : <span className="text-xs text-muted-foreground">—</span>}
                   </TableCell>
                 </TableRow>
               );
