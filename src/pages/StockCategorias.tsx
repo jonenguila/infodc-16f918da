@@ -92,12 +92,16 @@ const StockCategorias = () => {
                 </TableCell>
                 <TableCell className="text-muted-foreground text-sm">{t.descricao || "—"}</TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(t)}>
-                    <Pencil className="w-4 h-4 text-muted-foreground" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(t.id)}>
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+                  {isAdminOrGestor ? (
+                    <>
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(t)}>
+                        <Pencil className="w-4 h-4 text-muted-foreground" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(t.id)}>
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </>
+                  ) : <span className="text-xs text-muted-foreground">—</span>}
                 </TableCell>
               </TableRow>
             ))}
