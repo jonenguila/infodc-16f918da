@@ -357,6 +357,7 @@ export type Database = {
           produtos: Json
           responsavel_levantamento: string | null
           tipo_evento: string | null
+          user_id: string | null
         }
         Insert: {
           criado_em?: string
@@ -377,6 +378,7 @@ export type Database = {
           produtos?: Json
           responsavel_levantamento?: string | null
           tipo_evento?: string | null
+          user_id?: string | null
         }
         Update: {
           criado_em?: string
@@ -397,6 +399,7 @@ export type Database = {
           produtos?: Json
           responsavel_levantamento?: string | null
           tipo_evento?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
