@@ -11,10 +11,13 @@ import {
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useStockStore } from "@/stores/stockStore";
+import { useAuth } from "@/contexts/AuthContext";
 
 const StockCategorias = () => {
   const { tipologias, adicionarTipologia, editarTipologia, eliminarTipologia } = useStockStore();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdminOrGestor = user?.perfil === "Administrador" || user?.perfil === "Gestor";
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ nome: "", descricao: "" });
@@ -56,7 +59,7 @@ const StockCategorias = () => {
           <h1 className="text-2xl font-bold text-foreground">Tipologias</h1>
           <p className="text-sm text-muted-foreground mt-1">Gerir tipologias de produtos</p>
         </div>
-        <Button onClick={openNew} className="gap-2"><Plus className="w-4 h-4" /> Nova Tipologia</Button>
+        {isAdminOrGestor && <Button onClick={openNew} className="gap-2"><Plus className="w-4 h-4" /> Nova Tipologia</Button>}
       </div>
 
       <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -89,12 +92,16 @@ const StockCategorias = () => {
                 </TableCell>
                 <TableCell className="text-muted-foreground text-sm">{t.descricao || "—"}</TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(t)}>
-                    <Pencil className="w-4 h-4 text-muted-foreground" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(t.id)}>
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+                  {isAdminOrGestor ? (
+                    <>
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(t)}>
+                        <Pencil className="w-4 h-4 text-muted-foreground" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(t.id)}>
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </>
+                  ) : <span className="text-xs text-muted-foreground">—</span>}
                 </TableCell>
               </TableRow>
             ))}

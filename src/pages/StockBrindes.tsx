@@ -29,6 +29,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { useStockStore } from "@/stores/stockStore";
 
 // ─── OVERVIEW TAB ───
@@ -167,6 +168,8 @@ const OverviewTab = () => {
 const StockTab = () => {
   const { produtos, tipologias, localizacoes, getEstado, importarExcel, adicionarProduto, editarProduto, eliminarProduto, exportarTemplate } = useStockStore();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdminOrGestor = user?.perfil === "Administrador" || user?.perfil === "Gestor";
   const [search, setSearch] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -260,9 +263,11 @@ const StockTab = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Pesquisar produto..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
-        <Button onClick={() => setShowAddDialog(true)} className="gap-2">
-          <Plus className="w-4 h-4" /> Novo Produto
-        </Button>
+        {isAdminOrGestor && (
+          <Button onClick={() => setShowAddDialog(true)} className="gap-2">
+            <Plus className="w-4 h-4" /> Novo Produto
+          </Button>
+        )}
         <label>
           <Input type="file" accept=".xlsx,.xls,.csv,.txt" onChange={handleImport} className="hidden" />
           <Button asChild variant="outline" className="gap-2">
@@ -329,14 +334,16 @@ const StockTab = () => {
                     <Badge className={`${estadoStyle[estado]} border-0 text-[11px]`}>{estado}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(p)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => { setDeletingProduct(p); setShowDeleteDialog(true); }}>
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
+                    {isAdminOrGestor ? (
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(p)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => { setDeletingProduct(p); setShowDeleteDialog(true); }}>
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ) : <span className="text-xs text-muted-foreground">—</span>}
                   </TableCell>
                 </TableRow>
               );
