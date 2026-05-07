@@ -362,8 +362,10 @@ export function useStockStore() {
     }
 
     const numero = getNextPedidoNumber();
+    const { data: { user: authUser } } = await supabase.auth.getUser();
     const { error } = await supabase.from("stock_pedidos").insert({
       numero,
+      user_id: authUser?.id,
       data_pedido: pedidoData.dataPedido,
       nome_requisitante: pedidoData.nomeRequisitante,
       email: pedidoData.email,

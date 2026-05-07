@@ -280,22 +280,26 @@ const ListagemPedidos = () => {
                   <Badge className={`${prioridadeStyles[p.prioridade]} border-0 text-[11px]`}>{p.prioridade}</Badge>
                 </TableCell>
                 <TableCell>
-                  <Select value={p.estado} onValueChange={(v) => {
-                    if (v === "Cancelado") {
-                      setPedidoCancelar(p);
-                    } else {
-                      atualizarEstadoPedido(p.id, v as Pedido["estado"]);
-                    }
-                  }}>
-                    <SelectTrigger className="h-7 w-[130px] text-xs border-0 p-0">
-                      <Badge className={`${estadoStyles[p.estado]} border-0 text-[11px]`}>{p.estado}</Badge>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Pendente">Pendente</SelectItem>
-                      <SelectItem value="Entregue">Entregue</SelectItem>
-                      <SelectItem value="Cancelado">Cancelado</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {isAdminOrGestor ? (
+                    <Select value={p.estado} onValueChange={(v) => {
+                      if (v === "Cancelado") {
+                        setPedidoCancelar(p);
+                      } else {
+                        atualizarEstadoPedido(p.id, v as Pedido["estado"]);
+                      }
+                    }}>
+                      <SelectTrigger className="h-7 w-[130px] text-xs border-0 p-0">
+                        <Badge className={`${estadoStyles[p.estado]} border-0 text-[11px]`}>{p.estado}</Badge>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pendente">Pendente</SelectItem>
+                        <SelectItem value="Entregue">Entregue</SelectItem>
+                        <SelectItem value="Cancelado">Cancelado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge className={`${estadoStyles[p.estado]} border-0 text-[11px]`}>{p.estado}</Badge>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">

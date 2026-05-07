@@ -9,7 +9,7 @@ const routePermissions: Record<Perfil, string[]> = {
     "/comunicacao/pedidos", "/comunicacao/newsletter", "/comunicacao/links",
   ],
   Utilizador: [
-    "/", "/produtos", "/servicos", "/projetos",
+    "/",
     "/stock", "/stock/produtos", "/stock/tipologias", "/stock/localizacoes",
     "/stock/pedidos", "/stock/devolucao", "/stock/novo-pedido", "/stock/historico", "/stock/listagem-pedidos",
     "/comunicacao/pedidos", "/comunicacao/newsletter", "/comunicacao/links",
@@ -19,7 +19,7 @@ const routePermissions: Record<Perfil, string[]> = {
 const sidebarPermissions: Record<Perfil, string[]> = {
   Administrador: ["*"],
   Gestor: ["Dashboard", "Produtos", "Serviços", "Projetos Financiados", "Stock", "Comunicação"],
-  Utilizador: ["Dashboard", "Produtos", "Serviços", "Projetos Financiados", "Stock", "Comunicação"],
+  Utilizador: ["Dashboard", "Stock", "Comunicação"],
 };
 
 export function canAccessRoute(perfil: Perfil, path: string): boolean {
