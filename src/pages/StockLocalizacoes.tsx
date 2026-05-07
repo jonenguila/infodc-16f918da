@@ -11,10 +11,13 @@ import {
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useStockStore } from "@/stores/stockStore";
+import { useAuth } from "@/contexts/AuthContext";
 
 const StockLocalizacoes = () => {
   const { localizacoes, adicionarLocalizacao, editarLocalizacao, eliminarLocalizacao } = useStockStore();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdminOrGestor = user?.perfil === "Administrador" || user?.perfil === "Gestor";
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ nome: "", descricao: "" });
