@@ -167,6 +167,8 @@ const OverviewTab = () => {
 const StockTab = () => {
   const { produtos, tipologias, localizacoes, getEstado, importarExcel, adicionarProduto, editarProduto, eliminarProduto, exportarTemplate } = useStockStore();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdminOrGestor = user?.perfil === "Administrador" || user?.perfil === "Gestor";
   const [search, setSearch] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
