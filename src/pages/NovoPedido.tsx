@@ -111,7 +111,7 @@ const NovoPedido = () => {
       responsavelLevantamento,
       prioridade,
       observacoes,
-      produtos: produtosPedido.map((pp) => ({ produtoId: pp.produtoId, produtoNome: pp.produtoNome, quantidade: pp.quantidade })),
+      produtos: produtosPedido.map((pp) => ({ produtoId: pp.produtoId, produtoNome: pp.produtoNome, localizacao: pp.localizacao, quantidade: pp.quantidade })),
     });
 
     if (err) {
@@ -133,7 +133,7 @@ const NovoPedido = () => {
           responsavelLevantamento,
           prioridade,
           observacoes,
-          produtos: produtosPedido.map((pp) => ({ produtoNome: pp.produtoNome, quantidade: pp.quantidade })),
+          produtos: produtosPedido.map((pp) => ({ produtoNome: pp.produtoNome, localizacao: pp.localizacao, quantidade: pp.quantidade })),
         },
       });
       if (emailError) console.error("Falha ao enviar notificação por email:", emailError);
