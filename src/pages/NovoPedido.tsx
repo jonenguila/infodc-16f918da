@@ -27,6 +27,7 @@ const prioridades: Array<"Baixa" | "Média" | "Alta" | "Urgente"> = ["Baixa", "M
 interface ProdutoPedido {
   produtoId: string;
   produtoNome: string;
+  localizacao: string;
   stock: number;
   quantidade: number;
 }
