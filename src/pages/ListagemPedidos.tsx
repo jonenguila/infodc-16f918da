@@ -52,7 +52,7 @@ const prioridadeStyles: Record<string, string> = {
 const ITEMS_PER_PAGE = 10;
 
 const ListagemPedidos = () => {
-  const { pedidos, atualizarEstadoPedido, editarPedido, eliminarPedido } = useStockStore();
+  const { pedidos, produtos, atualizarEstadoPedido, editarPedido, eliminarPedido } = useStockStore();
   const { toast } = useToast();
   const { user } = useAuth();
   const isAdminOrGestor = user?.perfil === "Administrador" || user?.perfil === "Gestor";
