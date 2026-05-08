@@ -389,6 +389,7 @@ const ListagemPedidos = () => {
                   <TableHeader>
                     <TableRow className="bg-secondary/30">
                       <TableHead>Produto</TableHead>
+                      <TableHead>Localização</TableHead>
                       <TableHead className="text-right">Qtd.</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -396,6 +397,7 @@ const ListagemPedidos = () => {
                     {detalhePedido.produtos.map((pp, i) => (
                       <TableRow key={i}>
                         <TableCell>{pp.produtoNome}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">{getProdutoLocalizacao(pp, produtos)}</TableCell>
                         <TableCell className="text-right font-medium">{pp.quantidade}</TableCell>
                       </TableRow>
                     ))}
