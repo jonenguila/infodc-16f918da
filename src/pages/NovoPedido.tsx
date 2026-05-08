@@ -255,6 +255,7 @@ const NovoPedido = () => {
                   <TableHeader>
                     <TableRow className="bg-secondary/40">
                       <TableHead>Produto</TableHead>
+                      <TableHead>Localização</TableHead>
                       <TableHead className="text-right">Stock Disp.</TableHead>
                       <TableHead className="text-right">Qtd.</TableHead>
                       <TableHead className="text-right w-[60px]" />
@@ -264,6 +265,7 @@ const NovoPedido = () => {
                     {produtosPedido.map((pp) => (
                       <TableRow key={pp.produtoId}>
                         <TableCell className="font-medium text-foreground">{pp.produtoNome}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">{pp.localizacao || "Não aplicável"}</TableCell>
                         <TableCell className="text-right text-muted-foreground">{pp.stock}</TableCell>
                         <TableCell className={cn("text-right font-medium", pp.quantidade > pp.stock ? "text-destructive" : "text-foreground")}>
                           {pp.quantidade}
