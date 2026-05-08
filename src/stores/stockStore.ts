@@ -38,6 +38,7 @@ export interface Movimento {
 export interface PedidoProduto {
   produtoId: string;
   produtoNome: string;
+  localizacao?: string;
   quantidade: number;
 }
 
