@@ -27,6 +27,12 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useStockStore, type Pedido } from "@/stores/stockStore";
+
+const getProdutoLocalizacao = (pp: any, produtos: any[]): string => {
+  if (pp.localizacao) return pp.localizacao;
+  const prod = produtos.find((p) => p.id === pp.produtoId);
+  return prod?.localizacao || "Não aplicável";
+};
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
