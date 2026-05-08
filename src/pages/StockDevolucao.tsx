@@ -58,7 +58,7 @@ const StockDevolucao = () => {
         prev.map((pp) => pp.produtoId === prod.id ? { ...pp, quantidade: pp.quantidade + quantidade } : pp)
       );
     } else {
-      setProdutosDevolucao((prev) => [...prev, { produtoId: prod.id, produtoNome: prod.nome, quantidade }]);
+      setProdutosDevolucao((prev) => [...prev, { produtoId: prod.id, produtoNome: prod.nome, localizacao: prod.localizacao || "", quantidade }]);
     }
     setProdutoSelecionado("");
     setQuantidade(1);
