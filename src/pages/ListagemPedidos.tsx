@@ -329,7 +329,7 @@ const ListagemPedidos = () => {
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+            );})}
           </TableBody>
         </Table>
       </div>
