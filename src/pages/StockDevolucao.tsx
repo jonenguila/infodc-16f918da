@@ -167,6 +167,7 @@ const StockDevolucao = () => {
               <TableHead>Data Entrega</TableHead>
               <TableHead>Responsável</TableHead>
               <TableHead>Produtos</TableHead>
+              <TableHead>Localizações</TableHead>
               <TableHead>Total Un.</TableHead>
               <TableHead>Estado</TableHead>
             </TableRow>
@@ -174,11 +175,17 @@ const StockDevolucao = () => {
           <TableBody>
             {filteredDocs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
                   Sem documentos de devolução registados.
                 </TableCell>
               </TableRow>
-            ) : filteredDocs.map((doc) => (
+            ) : filteredDocs.map((doc) => {
+              const locsList = doc.produtos.map((p) => {
+                const prod = produtos.find((x) => x.id === p.produtoId);
+                return p.localizacao || prod?.localizacao || "Não aplicável";
+              });
+              const locs = Array.from(new Set(locsList)).join(", ") || "Não aplicável";
+              return (
               <TableRow key={doc.id} className="hover:bg-muted/30">
                 <TableCell className="font-medium text-foreground">
                   <div className="flex items-center gap-2">
@@ -191,13 +198,14 @@ const StockDevolucao = () => {
                 <TableCell className="text-muted-foreground text-sm">{doc.nomeEvento}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">{doc.dataEntrega}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">{doc.responsavel}</TableCell>
-                <TableCell className="text-foreground text-sm">{doc.produtos.map((p) => p.produtoNome).join(", ")}</TableCell>
+                <TableCell className="text-foreground text-sm">{doc.produtos.map((p, i) => `${p.produtoNome} (${locsList[i]})`).join(", ")}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">{locs}</TableCell>
                 <TableCell className="font-semibold text-foreground">{doc.produtos.reduce((a, p) => a + p.quantidade, 0)}</TableCell>
                 <TableCell>
                   <Badge className="bg-green-100 text-green-700 border-0 text-[11px]">Registado</Badge>
                 </TableCell>
               </TableRow>
-            ))}
+            );})}
           </TableBody>
         </Table>
       </div>
