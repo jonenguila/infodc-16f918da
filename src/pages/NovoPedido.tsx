@@ -234,7 +234,7 @@ const NovoPedido = () => {
                   <SelectContent>
                     {produtosComStock.map((p) => (
                       <SelectItem key={p.id} value={String(p.id)}>
-                        {p.nome} (Stock: {p.stockAtual})
+                        {p.nome} {p.localizacao ? `— ${p.localizacao}` : ""} (Stock: {p.stockAtual})
                       </SelectItem>
                     ))}
                   </SelectContent>
