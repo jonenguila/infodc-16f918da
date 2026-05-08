@@ -272,7 +272,7 @@ const StockDevolucao = () => {
                         return (
                         <TableRow key={pp.produtoId}>
                           <TableCell className="font-medium text-foreground">{pp.produtoNome}</TableCell>
-                          <TableCell className="text-muted-foreground text-sm">{prod?.localizacao || "Não aplicável"}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">{pp.localizacao || prod?.localizacao || "Não aplicável"}</TableCell>
                           <TableCell className="text-right font-medium text-foreground">{pp.quantidade}</TableCell>
                           <TableCell className="text-right">
                             <Button variant="ghost" size="icon" onClick={() => removerProduto(pp.produtoId)} className="h-8 w-8">
