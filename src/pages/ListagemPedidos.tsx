@@ -262,6 +262,7 @@ const ListagemPedidos = () => {
               <TableHead>Requisitante</TableHead>
               <TableHead>Evento</TableHead>
               <TableHead className="text-center">Produtos</TableHead>
+              <TableHead>Localizações</TableHead>
               <TableHead>Prioridade</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Ações</TableHead>
@@ -270,11 +271,13 @@ const ListagemPedidos = () => {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
                   Sem pedidos registados.
                 </TableCell>
               </TableRow>
-            ) : paginatedItems.map((p) => (
+            ) : paginatedItems.map((p) => {
+              const locs = Array.from(new Set(p.produtos.map((pp) => getProdutoLocalizacao(pp, produtos)))).join(", ") || "Não aplicável";
+              return (
               <TableRow key={p.id} className="hover:bg-muted/30">
                 <TableCell className="text-muted-foreground text-sm">
                   {format(new Date(p.dataPedido), "dd/MM/yyyy")}
@@ -282,6 +285,7 @@ const ListagemPedidos = () => {
                 <TableCell className="font-medium text-foreground">{p.nomeRequisitante}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">{(p as any).nomeEvento || p.tipoEvento || "—"}</TableCell>
                 <TableCell className="text-center font-medium text-foreground">{totalProdutos(p)}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">{locs}</TableCell>
                 <TableCell>
                   <Badge className={`${prioridadeStyles[p.prioridade]} border-0 text-[11px]`}>{p.prioridade}</Badge>
                 </TableCell>
