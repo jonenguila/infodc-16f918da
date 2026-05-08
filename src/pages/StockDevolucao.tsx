@@ -241,7 +241,7 @@ const StockDevolucao = () => {
                     <SelectTrigger><SelectValue placeholder="Selecionar produto" /></SelectTrigger>
                     <SelectContent>
                       {produtos.map((p) => (
-                        <SelectItem key={p.id} value={String(p.id)}>{p.nome}</SelectItem>
+                        <SelectItem key={p.id} value={String(p.id)}>{p.nome}{p.localizacao ? ` — ${p.localizacao}` : ""}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -261,14 +261,18 @@ const StockDevolucao = () => {
                     <TableHeader>
                       <TableRow className="bg-secondary/40">
                         <TableHead>Produto</TableHead>
+                        <TableHead>Localização</TableHead>
                         <TableHead className="text-right">Quantidade</TableHead>
                         <TableHead className="text-right w-[60px]" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {produtosDevolucao.map((pp) => (
+                      {produtosDevolucao.map((pp) => {
+                        const prod = produtos.find((p) => p.id === pp.produtoId);
+                        return (
                         <TableRow key={pp.produtoId}>
                           <TableCell className="font-medium text-foreground">{pp.produtoNome}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">{prod?.localizacao || "Não aplicável"}</TableCell>
                           <TableCell className="text-right font-medium text-foreground">{pp.quantidade}</TableCell>
                           <TableCell className="text-right">
                             <Button variant="ghost" size="icon" onClick={() => removerProduto(pp.produtoId)} className="h-8 w-8">
@@ -276,7 +280,7 @@ const StockDevolucao = () => {
                             </Button>
                           </TableCell>
                         </TableRow>
-                      ))}
+                      );})}
                     </TableBody>
                   </Table>
                 </div>

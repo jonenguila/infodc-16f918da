@@ -27,6 +27,7 @@ const prioridades: Array<"Baixa" | "Média" | "Alta" | "Urgente"> = ["Baixa", "M
 interface ProdutoPedido {
   produtoId: string;
   produtoNome: string;
+  localizacao: string;
   stock: number;
   quantidade: number;
 }
@@ -69,7 +70,7 @@ const NovoPedido = () => {
         prev.map((pp) => pp.produtoId === prod.id ? { ...pp, quantidade: pp.quantidade + quantidade } : pp)
       );
     } else {
-      setProdutosPedido((prev) => [...prev, { produtoId: prod.id, produtoNome: prod.nome, stock: prod.stockAtual, quantidade }]);
+      setProdutosPedido((prev) => [...prev, { produtoId: prod.id, produtoNome: prod.nome, localizacao: prod.localizacao || "Não aplicável", stock: prod.stockAtual, quantidade }]);
     }
     setProdutoSelecionado("");
     setQuantidade(1);
@@ -233,7 +234,7 @@ const NovoPedido = () => {
                   <SelectContent>
                     {produtosComStock.map((p) => (
                       <SelectItem key={p.id} value={String(p.id)}>
-                        {p.nome} (Stock: {p.stockAtual})
+                        {p.nome} {p.localizacao ? `— ${p.localizacao}` : ""} (Stock: {p.stockAtual})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -254,6 +255,7 @@ const NovoPedido = () => {
                   <TableHeader>
                     <TableRow className="bg-secondary/40">
                       <TableHead>Produto</TableHead>
+                      <TableHead>Localização</TableHead>
                       <TableHead className="text-right">Stock Disp.</TableHead>
                       <TableHead className="text-right">Qtd.</TableHead>
                       <TableHead className="text-right w-[60px]" />
@@ -263,6 +265,7 @@ const NovoPedido = () => {
                     {produtosPedido.map((pp) => (
                       <TableRow key={pp.produtoId}>
                         <TableCell className="font-medium text-foreground">{pp.produtoNome}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">{pp.localizacao || "Não aplicável"}</TableCell>
                         <TableCell className="text-right text-muted-foreground">{pp.stock}</TableCell>
                         <TableCell className={cn("text-right font-medium", pp.quantidade > pp.stock ? "text-destructive" : "text-foreground")}>
                           {pp.quantidade}
