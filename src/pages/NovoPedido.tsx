@@ -70,7 +70,7 @@ const NovoPedido = () => {
         prev.map((pp) => pp.produtoId === prod.id ? { ...pp, quantidade: pp.quantidade + quantidade } : pp)
       );
     } else {
-      setProdutosPedido((prev) => [...prev, { produtoId: prod.id, produtoNome: prod.nome, stock: prod.stockAtual, quantidade }]);
+      setProdutosPedido((prev) => [...prev, { produtoId: prod.id, produtoNome: prod.nome, localizacao: prod.localizacao || "Não aplicável", stock: prod.stockAtual, quantidade }]);
     }
     setProdutoSelecionado("");
     setQuantidade(1);
