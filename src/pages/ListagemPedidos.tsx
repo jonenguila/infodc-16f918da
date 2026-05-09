@@ -262,7 +262,7 @@ const ListagemPedidos = () => {
               <TableHead>Requisitante</TableHead>
               <TableHead>Evento</TableHead>
               <TableHead className="text-center">Produtos</TableHead>
-              <TableHead>Localizações</TableHead>
+              <TableHead>Localização</TableHead>
               <TableHead>Prioridade</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Ações</TableHead>
@@ -276,7 +276,9 @@ const ListagemPedidos = () => {
                 </TableCell>
               </TableRow>
             ) : paginatedItems.map((p) => {
-              const locs = Array.from(new Set(p.produtos.map((pp) => getProdutoLocalizacao(pp, produtos)))).join(", ") || "Não aplicável";
+              const locTopo = (p as any).localizacao || "";
+              const locsProdutos = Array.from(new Set(p.produtos.map((pp) => getProdutoLocalizacao(pp, produtos)))).join(", ");
+              const locs = locTopo || locsProdutos || "Não aplicável";
               return (
               <TableRow key={p.id} className="hover:bg-muted/30">
                 <TableCell className="text-muted-foreground text-sm">
@@ -383,6 +385,7 @@ const ListagemPedidos = () => {
                 <div><span className="text-muted-foreground">Nome do Evento:</span> {(detalhePedido as any).nomeEvento || "—"}</div>
                 <div><span className="text-muted-foreground">Responsável:</span> {detalhePedido.responsavelLevantamento || "—"}</div>
                 <div><span className="text-muted-foreground">Prioridade:</span> <Badge className={`${prioridadeStyles[detalhePedido.prioridade]} border-0 text-[11px]`}>{detalhePedido.prioridade}</Badge></div>
+                <div><span className="text-muted-foreground">Localização:</span> <strong>{(detalhePedido as any).localizacao || "Não aplicável"}</strong></div>
               </div>
               {detalhePedido.observacoes && (
                 <div><span className="text-muted-foreground">Observações:</span> <p className="mt-1">{detalhePedido.observacoes}</p></div>
