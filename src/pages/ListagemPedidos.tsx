@@ -276,7 +276,9 @@ const ListagemPedidos = () => {
                 </TableCell>
               </TableRow>
             ) : paginatedItems.map((p) => {
-              const locs = Array.from(new Set(p.produtos.map((pp) => getProdutoLocalizacao(pp, produtos)))).join(", ") || "Não aplicável";
+              const locTopo = (p as any).localizacao || "";
+              const locsProdutos = Array.from(new Set(p.produtos.map((pp) => getProdutoLocalizacao(pp, produtos)))).join(", ");
+              const locs = locTopo || locsProdutos || "Não aplicável";
               return (
               <TableRow key={p.id} className="hover:bg-muted/30">
                 <TableCell className="text-muted-foreground text-sm">
