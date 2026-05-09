@@ -385,6 +385,7 @@ export function useStockStore() {
       responsavel_levantamento: pedidoData.responsavelLevantamento,
       prioridade: pedidoData.prioridade,
       observacoes: pedidoData.observacoes,
+      localizacao: pedidoData.localizacao,
       produtos: pedidoData.produtos as any,
       estado: "Pendente",
     });
