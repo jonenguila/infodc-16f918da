@@ -151,6 +151,7 @@ async function fetchAll() {
     responsavelLevantamento: p.responsavel_levantamento || "",
     prioridade: p.prioridade as Pedido["prioridade"],
     observacoes: p.observacoes || "",
+    localizacao: p.localizacao || "",
     produtos: (p.produtos || []) as PedidoProduto[],
     estado: p.estado as Pedido["estado"],
     criadoEm: p.criado_em,
