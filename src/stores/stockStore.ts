@@ -90,6 +90,7 @@ export interface DocumentoDevolucao {
   nomeEvento: string;
   dataEntrega: string;
   responsavel: string;
+  localizacao: string;
   produtos: ProdutoDevolucaoDoc[];
   observacoes: string;
 }
