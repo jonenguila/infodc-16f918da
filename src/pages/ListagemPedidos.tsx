@@ -262,7 +262,7 @@ const ListagemPedidos = () => {
               <TableHead>Requisitante</TableHead>
               <TableHead>Evento</TableHead>
               <TableHead className="text-center">Produtos</TableHead>
-              <TableHead>Localizações</TableHead>
+              <TableHead>Localização</TableHead>
               <TableHead>Prioridade</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Ações</TableHead>
