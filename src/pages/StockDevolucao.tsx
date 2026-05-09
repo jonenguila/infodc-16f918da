@@ -186,7 +186,8 @@ const StockDevolucao = () => {
                 const prod = produtos.find((x) => x.id === p.produtoId);
                 return p.localizacao || prod?.localizacao || "Não aplicável";
               });
-              const locs = Array.from(new Set(locsList)).join(", ") || "Não aplicável";
+              const locTopo = (doc as any).localizacao || "";
+              const locs = locTopo || Array.from(new Set(locsList)).join(", ") || "Não aplicável";
               return (
               <TableRow key={doc.id} className="hover:bg-muted/30">
                 <TableCell className="font-medium text-foreground">
