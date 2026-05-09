@@ -71,7 +71,7 @@ const StockDevolucao = () => {
 
   const limparForm = () => {
     setNome(""); setNomeEvento(""); setDataEntrega(undefined);
-    setResponsavel(""); setObservacoes("");
+    setResponsavel(""); setLocalizacao(""); setObservacoes("");
     setProdutoSelecionado(""); setQuantidade(1); setProdutosDevolucao([]);
     setTentouSubmeter(false);
   };
@@ -87,6 +87,7 @@ const StockDevolucao = () => {
       nomeEvento,
       dataEntrega: dataEntrega!.toISOString().slice(0, 10),
       responsavel,
+      localizacao,
       produtos: [...produtosDevolucao],
       observacoes,
     });
