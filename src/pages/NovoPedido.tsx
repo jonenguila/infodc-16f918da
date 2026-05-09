@@ -113,6 +113,7 @@ const NovoPedido = () => {
       responsavelLevantamento,
       prioridade,
       observacoes,
+      localizacao,
       produtos: produtosPedido.map((pp) => ({ produtoId: pp.produtoId, produtoNome: pp.produtoNome, localizacao: pp.localizacao, quantidade: pp.quantidade })),
     });
 
