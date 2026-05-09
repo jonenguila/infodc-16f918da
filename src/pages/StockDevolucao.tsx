@@ -238,6 +238,17 @@ const StockDevolucao = () => {
                   <Label>Responsável pela Entrega <span className="text-destructive">*</span></Label>
                   <Input value={responsavel} onChange={(e) => setResponsavel(e.target.value)} placeholder="Nome do responsável" className={cn(hasError(!!responsavel) && "border-destructive ring-1 ring-destructive")} />
                 </div>
+                <div className="space-y-2">
+                  <Label>Localização <span className="text-destructive">*</span></Label>
+                  <Select value={localizacao} onValueChange={setLocalizacao}>
+                    <SelectTrigger className={cn(hasError(!!localizacao) && "border-destructive ring-1 ring-destructive")}>
+                      <SelectValue placeholder="Selecionar localização" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {localizacoes.map((l) => <SelectItem key={l.id} value={l.nome}>{l.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </section>
 
