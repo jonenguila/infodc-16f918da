@@ -385,6 +385,7 @@ const ListagemPedidos = () => {
                 <div><span className="text-muted-foreground">Nome do Evento:</span> {(detalhePedido as any).nomeEvento || "—"}</div>
                 <div><span className="text-muted-foreground">Responsável:</span> {detalhePedido.responsavelLevantamento || "—"}</div>
                 <div><span className="text-muted-foreground">Prioridade:</span> <Badge className={`${prioridadeStyles[detalhePedido.prioridade]} border-0 text-[11px]`}>{detalhePedido.prioridade}</Badge></div>
+                <div><span className="text-muted-foreground">Localização:</span> <strong>{(detalhePedido as any).localizacao || "Não aplicável"}</strong></div>
               </div>
               {detalhePedido.observacoes && (
                 <div><span className="text-muted-foreground">Observações:</span> <p className="mt-1">{detalhePedido.observacoes}</p></div>
