@@ -169,7 +169,7 @@ const StockDevolucao = () => {
               <TableHead>Data Entrega</TableHead>
               <TableHead>Responsável</TableHead>
               <TableHead>Produtos</TableHead>
-              <TableHead>Localizações</TableHead>
+              <TableHead>Localização</TableHead>
               <TableHead>Total Un.</TableHead>
               <TableHead>Estado</TableHead>
             </TableRow>
