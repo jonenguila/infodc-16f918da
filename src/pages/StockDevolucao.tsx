@@ -29,7 +29,7 @@ import { useStockStore } from "@/stores/stockStore";
 import { cn } from "@/lib/utils";
 
 const StockDevolucao = () => {
-  const { produtos, documentosDevolucao, registarDocumentoDevolucao } = useStockStore();
+  const { produtos, localizacoes, documentosDevolucao, registarDocumentoDevolucao } = useStockStore();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
