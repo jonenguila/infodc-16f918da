@@ -34,7 +34,7 @@ interface ProdutoPedido {
 
 const NovoPedido = () => {
   const { toast } = useToast();
-  const { produtos, criarPedido } = useStockStore();
+  const { produtos, localizacoes, criarPedido } = useStockStore();
 
   const [dataPedido, setDataPedido] = useState<Date>();
   const [nomeRequisitante, setNomeRequisitante] = useState("");
