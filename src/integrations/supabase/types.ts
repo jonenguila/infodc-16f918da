@@ -244,6 +244,7 @@ export type Database = {
           created_at: string
           data_entrega: string
           id: string
+          localizacao: string
           nome: string
           nome_evento: string | null
           observacoes: string | null
@@ -254,6 +255,7 @@ export type Database = {
           created_at?: string
           data_entrega: string
           id?: string
+          localizacao?: string
           nome: string
           nome_evento?: string | null
           observacoes?: string | null
@@ -264,6 +266,7 @@ export type Database = {
           created_at?: string
           data_entrega?: string
           id?: string
+          localizacao?: string
           nome?: string
           nome_evento?: string | null
           observacoes?: string | null
@@ -348,6 +351,7 @@ export type Database = {
           email: string
           estado: string
           id: string
+          localizacao: string
           nome_evento: string | null
           nome_requisitante: string
           numero: string
@@ -369,6 +373,7 @@ export type Database = {
           email: string
           estado?: string
           id?: string
+          localizacao?: string
           nome_evento?: string | null
           nome_requisitante: string
           numero: string
@@ -390,6 +395,7 @@ export type Database = {
           email?: string
           estado?: string
           id?: string
+          localizacao?: string
           nome_evento?: string | null
           nome_requisitante?: string
           numero?: string

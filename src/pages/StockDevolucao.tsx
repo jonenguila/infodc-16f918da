@@ -29,7 +29,7 @@ import { useStockStore } from "@/stores/stockStore";
 import { cn } from "@/lib/utils";
 
 const StockDevolucao = () => {
-  const { produtos, documentosDevolucao, registarDocumentoDevolucao } = useStockStore();
+  const { produtos, localizacoes, documentosDevolucao, registarDocumentoDevolucao } = useStockStore();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -39,13 +39,14 @@ const StockDevolucao = () => {
   const [nomeEvento, setNomeEvento] = useState("");
   const [dataEntrega, setDataEntrega] = useState<Date>();
   const [responsavel, setResponsavel] = useState("");
+  const [localizacao, setLocalizacao] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [produtoSelecionado, setProdutoSelecionado] = useState("");
   const [quantidade, setQuantidade] = useState(1);
   const [produtosDevolucao, setProdutosDevolucao] = useState<ProdutoDevolucaoDoc[]>([]);
   const [tentouSubmeter, setTentouSubmeter] = useState(false);
 
-  const camposValidos = nome && nomeEvento && dataEntrega && responsavel && produtosDevolucao.length > 0;
+  const camposValidos = nome && nomeEvento && dataEntrega && responsavel && localizacao && produtosDevolucao.length > 0;
 
   const hasError = (condition: boolean) => tentouSubmeter && !condition;
 
@@ -70,7 +71,7 @@ const StockDevolucao = () => {
 
   const limparForm = () => {
     setNome(""); setNomeEvento(""); setDataEntrega(undefined);
-    setResponsavel(""); setObservacoes("");
+    setResponsavel(""); setLocalizacao(""); setObservacoes("");
     setProdutoSelecionado(""); setQuantidade(1); setProdutosDevolucao([]);
     setTentouSubmeter(false);
   };
@@ -86,6 +87,7 @@ const StockDevolucao = () => {
       nomeEvento,
       dataEntrega: dataEntrega!.toISOString().slice(0, 10),
       responsavel,
+      localizacao,
       produtos: [...produtosDevolucao],
       observacoes,
     });
@@ -235,6 +237,17 @@ const StockDevolucao = () => {
                 <div className="space-y-2">
                   <Label>Responsável pela Entrega <span className="text-destructive">*</span></Label>
                   <Input value={responsavel} onChange={(e) => setResponsavel(e.target.value)} placeholder="Nome do responsável" className={cn(hasError(!!responsavel) && "border-destructive ring-1 ring-destructive")} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Localização <span className="text-destructive">*</span></Label>
+                  <Select value={localizacao} onValueChange={setLocalizacao}>
+                    <SelectTrigger className={cn(hasError(!!localizacao) && "border-destructive ring-1 ring-destructive")}>
+                      <SelectValue placeholder="Selecionar localização" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {localizacoes.map((l) => <SelectItem key={l.id} value={l.nome}>{l.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </section>

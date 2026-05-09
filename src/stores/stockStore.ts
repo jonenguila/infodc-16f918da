@@ -58,6 +58,7 @@ export interface Pedido {
   responsavelLevantamento: string;
   prioridade: "Baixa" | "Média" | "Alta" | "Urgente";
   observacoes: string;
+  localizacao: string;
   produtos: PedidoProduto[];
   estado: "Pendente" | "Entregue" | "Cancelado";
   criadoEm: string;
@@ -89,6 +90,7 @@ export interface DocumentoDevolucao {
   nomeEvento: string;
   dataEntrega: string;
   responsavel: string;
+  localizacao: string;
   produtos: ProdutoDevolucaoDoc[];
   observacoes: string;
 }
@@ -150,6 +152,7 @@ async function fetchAll() {
     responsavelLevantamento: p.responsavel_levantamento || "",
     prioridade: p.prioridade as Pedido["prioridade"],
     observacoes: p.observacoes || "",
+    localizacao: p.localizacao || "",
     produtos: (p.produtos || []) as PedidoProduto[],
     estado: p.estado as Pedido["estado"],
     criadoEm: p.criado_em,
@@ -165,6 +168,7 @@ async function fetchAll() {
   _documentosDevolucao = (ddRes.data || []).map((d: any) => ({
     id: d.id, nome: d.nome, nomeEvento: d.nome_evento || "",
     dataEntrega: d.data_entrega, responsavel: d.responsavel || "",
+    localizacao: d.localizacao || "",
     produtos: (d.produtos || []) as ProdutoDevolucaoDoc[],
     observacoes: d.observacoes || "",
   }));
@@ -381,6 +385,7 @@ export function useStockStore() {
       responsavel_levantamento: pedidoData.responsavelLevantamento,
       prioridade: pedidoData.prioridade,
       observacoes: pedidoData.observacoes,
+      localizacao: pedidoData.localizacao,
       produtos: pedidoData.produtos as any,
       estado: "Pendente",
     });
@@ -556,7 +561,8 @@ export function useStockStore() {
     // Insert document
     await supabase.from("stock_documentos_devolucao").insert({
       nome: doc.nome, nome_evento: doc.nomeEvento, data_entrega: doc.dataEntrega,
-      responsavel: doc.responsavel, produtos: doc.produtos as any, observacoes: doc.observacoes,
+      responsavel: doc.responsavel, localizacao: doc.localizacao,
+      produtos: doc.produtos as any, observacoes: doc.observacoes,
     });
 
     // Restore stock and create movements

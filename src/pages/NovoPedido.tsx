@@ -34,7 +34,7 @@ interface ProdutoPedido {
 
 const NovoPedido = () => {
   const { toast } = useToast();
-  const { produtos, criarPedido } = useStockStore();
+  const { produtos, localizacoes, criarPedido } = useStockStore();
 
   const [dataPedido, setDataPedido] = useState<Date>();
   const [nomeRequisitante, setNomeRequisitante] = useState("");
@@ -45,6 +45,7 @@ const NovoPedido = () => {
   const [dataRecolha, setDataRecolha] = useState<Date>();
   const [responsavelLevantamento, setResponsavelLevantamento] = useState("");
   const [prioridade, setPrioridade] = useState<"Baixa" | "Média" | "Alta" | "Urgente">("Média");
+  const [localizacao, setLocalizacao] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [produtoSelecionado, setProdutoSelecionado] = useState("");
   const [quantidade, setQuantidade] = useState(1);
@@ -84,11 +85,12 @@ const NovoPedido = () => {
     setDataPedido(undefined); setNomeRequisitante(""); setEmail("");
     setTipoEvento(""); setNomeEvento(""); setDataEvento(undefined);
     setDataRecolha(undefined); setResponsavelLevantamento(""); setPrioridade("Média");
+    setLocalizacao("");
     setObservacoes(""); setProdutoSelecionado(""); setQuantidade(1); setProdutosPedido([]);
     setTentouSubmeter(false);
   };
 
-  const camposValidos = dataPedido && nomeRequisitante && email && tipoEvento && nomeEvento && dataEvento && dataRecolha && responsavelLevantamento && prioridade && produtosPedido.length > 0;
+  const camposValidos = dataPedido && nomeRequisitante && email && tipoEvento && nomeEvento && dataEvento && dataRecolha && responsavelLevantamento && prioridade && localizacao && produtosPedido.length > 0;
 
   const handleSubmit = async () => {
     setTentouSubmeter(true);
@@ -111,6 +113,7 @@ const NovoPedido = () => {
       responsavelLevantamento,
       prioridade,
       observacoes,
+      localizacao,
       produtos: produtosPedido.map((pp) => ({ produtoId: pp.produtoId, produtoNome: pp.produtoNome, localizacao: pp.localizacao, quantidade: pp.quantidade })),
     });
 
@@ -217,6 +220,17 @@ const NovoPedido = () => {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {prioridades.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Localização <span className="text-destructive">*</span></Label>
+                <Select value={localizacao} onValueChange={setLocalizacao}>
+                  <SelectTrigger className={cn(hasError(!!localizacao) && "border-destructive ring-1 ring-destructive")}>
+                    <SelectValue placeholder="Selecionar localização" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {localizacoes.map((l) => <SelectItem key={l.id} value={l.nome}>{l.nome}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
