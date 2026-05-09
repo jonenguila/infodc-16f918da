@@ -45,6 +45,7 @@ const NovoPedido = () => {
   const [dataRecolha, setDataRecolha] = useState<Date>();
   const [responsavelLevantamento, setResponsavelLevantamento] = useState("");
   const [prioridade, setPrioridade] = useState<"Baixa" | "Média" | "Alta" | "Urgente">("Média");
+  const [localizacao, setLocalizacao] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [produtoSelecionado, setProdutoSelecionado] = useState("");
   const [quantidade, setQuantidade] = useState(1);
