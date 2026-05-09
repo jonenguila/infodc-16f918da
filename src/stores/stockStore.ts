@@ -58,6 +58,7 @@ export interface Pedido {
   responsavelLevantamento: string;
   prioridade: "Baixa" | "Média" | "Alta" | "Urgente";
   observacoes: string;
+  localizacao: string;
   produtos: PedidoProduto[];
   estado: "Pendente" | "Entregue" | "Cancelado";
   criadoEm: string;
