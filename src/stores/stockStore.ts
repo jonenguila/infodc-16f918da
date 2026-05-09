@@ -561,7 +561,8 @@ export function useStockStore() {
     // Insert document
     await supabase.from("stock_documentos_devolucao").insert({
       nome: doc.nome, nome_evento: doc.nomeEvento, data_entrega: doc.dataEntrega,
-      responsavel: doc.responsavel, produtos: doc.produtos as any, observacoes: doc.observacoes,
+      responsavel: doc.responsavel, localizacao: doc.localizacao,
+      produtos: doc.produtos as any, observacoes: doc.observacoes,
     });
 
     // Restore stock and create movements
