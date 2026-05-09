@@ -1,0 +1,2 @@
+ALTER TABLE public.stock_pedidos ADD COLUMN IF NOT EXISTS localizacao text NOT NULL DEFAULT '';
+ALTER TABLE public.stock_documentos_devolucao ADD COLUMN IF NOT EXISTS localizacao text NOT NULL DEFAULT '';
