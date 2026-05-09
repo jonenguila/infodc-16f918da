@@ -168,6 +168,7 @@ async function fetchAll() {
   _documentosDevolucao = (ddRes.data || []).map((d: any) => ({
     id: d.id, nome: d.nome, nomeEvento: d.nome_evento || "",
     dataEntrega: d.data_entrega, responsavel: d.responsavel || "",
+    localizacao: d.localizacao || "",
     produtos: (d.produtos || []) as ProdutoDevolucaoDoc[],
     observacoes: d.observacoes || "",
   }));
