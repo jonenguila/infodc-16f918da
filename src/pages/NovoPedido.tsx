@@ -85,11 +85,12 @@ const NovoPedido = () => {
     setDataPedido(undefined); setNomeRequisitante(""); setEmail("");
     setTipoEvento(""); setNomeEvento(""); setDataEvento(undefined);
     setDataRecolha(undefined); setResponsavelLevantamento(""); setPrioridade("Média");
+    setLocalizacao("");
     setObservacoes(""); setProdutoSelecionado(""); setQuantidade(1); setProdutosPedido([]);
     setTentouSubmeter(false);
   };
 
-  const camposValidos = dataPedido && nomeRequisitante && email && tipoEvento && nomeEvento && dataEvento && dataRecolha && responsavelLevantamento && prioridade && produtosPedido.length > 0;
+  const camposValidos = dataPedido && nomeRequisitante && email && tipoEvento && nomeEvento && dataEvento && dataRecolha && responsavelLevantamento && prioridade && localizacao && produtosPedido.length > 0;
 
   const handleSubmit = async () => {
     setTentouSubmeter(true);
