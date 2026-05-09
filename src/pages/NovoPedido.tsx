@@ -223,6 +223,17 @@ const NovoPedido = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label>Localização <span className="text-destructive">*</span></Label>
+                <Select value={localizacao} onValueChange={setLocalizacao}>
+                  <SelectTrigger className={cn(hasError(!!localizacao) && "border-destructive ring-1 ring-destructive")}>
+                    <SelectValue placeholder="Selecionar localização" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {localizacoes.map((l) => <SelectItem key={l.id} value={l.nome}>{l.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </section>
 
