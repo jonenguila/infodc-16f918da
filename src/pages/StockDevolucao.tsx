@@ -39,13 +39,14 @@ const StockDevolucao = () => {
   const [nomeEvento, setNomeEvento] = useState("");
   const [dataEntrega, setDataEntrega] = useState<Date>();
   const [responsavel, setResponsavel] = useState("");
+  const [localizacao, setLocalizacao] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [produtoSelecionado, setProdutoSelecionado] = useState("");
   const [quantidade, setQuantidade] = useState(1);
   const [produtosDevolucao, setProdutosDevolucao] = useState<ProdutoDevolucaoDoc[]>([]);
   const [tentouSubmeter, setTentouSubmeter] = useState(false);
 
-  const camposValidos = nome && nomeEvento && dataEntrega && responsavel && produtosDevolucao.length > 0;
+  const camposValidos = nome && nomeEvento && dataEntrega && responsavel && localizacao && produtosDevolucao.length > 0;
 
   const hasError = (condition: boolean) => tentouSubmeter && !condition;
 
