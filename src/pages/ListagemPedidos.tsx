@@ -74,6 +74,7 @@ const ListagemPedidos = () => {
     nomeEvento: "",
     responsavelLevantamento: "",
     prioridade: "Média" as Pedido["prioridade"],
+    localizacao: "",
     observacoes: "",
   });
   const [savingEdit, setSavingEdit] = useState(false);
@@ -89,6 +90,7 @@ const ListagemPedidos = () => {
       nomeEvento: p.nomeEvento || "",
       responsavelLevantamento: p.responsavelLevantamento || "",
       prioridade: p.prioridade,
+      localizacao: (p as any).localizacao || "",
       observacoes: p.observacoes || "",
     });
     setPedidoEditar(p);
@@ -96,8 +98,8 @@ const ListagemPedidos = () => {
 
   const handleSaveEdit = async () => {
     if (!pedidoEditar) return;
-    if (!editForm.nomeRequisitante.trim() || !editForm.email.trim() || !editForm.dataPedido) {
-      toast({ title: "Campos obrigatórios em falta", variant: "destructive" });
+    if (!editForm.nomeRequisitante.trim() || !editForm.email.trim() || !editForm.dataPedido || !editForm.localizacao) {
+      toast({ title: "Campos obrigatórios em falta", description: "Requisitante, Email, Data e Localização são obrigatórios.", variant: "destructive" });
       return;
     }
     setSavingEdit(true);
