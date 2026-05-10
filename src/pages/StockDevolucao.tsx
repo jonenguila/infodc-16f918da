@@ -34,8 +34,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 const StockDevolucao = () => {
-  const { produtos, localizacoes, documentosDevolucao, registarDocumentoDevolucao } = useStockStore();
+  const { produtos, localizacoes, documentosDevolucao, registarDocumentoDevolucao, editarDocumentoDevolucao, eliminarDocumentoDevolucao } = useStockStore();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdminOrGestor = user?.perfil === "Administrador" || user?.perfil === "Gestor";
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -51,9 +53,66 @@ const StockDevolucao = () => {
   const [produtosDevolucao, setProdutosDevolucao] = useState<ProdutoDevolucaoDoc[]>([]);
   const [tentouSubmeter, setTentouSubmeter] = useState(false);
 
+  // Edit state
+  const [docEditar, setDocEditar] = useState<DocumentoDevolucao | null>(null);
+  const [editForm, setEditForm] = useState({
+    nome: "",
+    nomeEvento: "",
+    dataEntrega: "",
+    responsavel: "",
+    localizacao: "",
+    observacoes: "",
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [docEliminar, setDocEliminar] = useState<DocumentoDevolucao | null>(null);
+  const [deletingDoc, setDeletingDoc] = useState(false);
+  const [detalheDoc, setDetalheDoc] = useState<DocumentoDevolucao | null>(null);
+
   const camposValidos = nome && nomeEvento && dataEntrega && responsavel && localizacao && produtosDevolucao.length > 0;
 
   const hasError = (condition: boolean) => tentouSubmeter && !condition;
+
+  const openEditar = (doc: DocumentoDevolucao) => {
+    setEditForm({
+      nome: doc.nome,
+      nomeEvento: doc.nomeEvento,
+      dataEntrega: doc.dataEntrega,
+      responsavel: doc.responsavel,
+      localizacao: doc.localizacao || "",
+      observacoes: doc.observacoes || "",
+    });
+    setDocEditar(doc);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!docEditar) return;
+    if (!editForm.nome.trim() || !editForm.nomeEvento.trim() || !editForm.dataEntrega || !editForm.responsavel.trim() || !editForm.localizacao) {
+      toast({ title: "Campos obrigatórios em falta", description: "Nome, Evento, Data, Responsável e Localização são obrigatórios.", variant: "destructive" });
+      return;
+    }
+    setSavingEdit(true);
+    const err = await editarDocumentoDevolucao(docEditar.id, editForm);
+    setSavingEdit(false);
+    if (err) {
+      toast({ title: "Erro ao guardar", description: err, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Documento atualizado com sucesso" });
+    setDocEditar(null);
+  };
+
+  const handleDelete = async () => {
+    if (!docEliminar) return;
+    setDeletingDoc(true);
+    const err = await eliminarDocumentoDevolucao(docEliminar.id);
+    setDeletingDoc(false);
+    if (err) {
+      toast({ title: "Erro ao eliminar", description: err, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Documento eliminado" });
+    setDocEliminar(null);
+  };
 
   const adicionarProduto = () => {
     const prod = produtos.find((p) => String(p.id) === produtoSelecionado);
