@@ -408,6 +408,129 @@ const StockDevolucao = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Detail dialog */}
+      <Dialog open={!!detalheDoc} onOpenChange={() => setDetalheDoc(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Documento</DialogTitle>
+          </DialogHeader>
+          {detalheDoc && (
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-muted-foreground">Nome:</span> <strong>{detalheDoc.nome}</strong></div>
+                <div><span className="text-muted-foreground">Evento:</span> <strong>{detalheDoc.nomeEvento}</strong></div>
+                <div><span className="text-muted-foreground">Data Entrega:</span> <strong>{detalheDoc.dataEntrega}</strong></div>
+                <div><span className="text-muted-foreground">Responsável:</span> <strong>{detalheDoc.responsavel}</strong></div>
+                <div><span className="text-muted-foreground">Localização:</span> <strong>{detalheDoc.localizacao || "Não aplicável"}</strong></div>
+              </div>
+              {detalheDoc.observacoes && (
+                <div><span className="text-muted-foreground">Observações:</span> <p className="mt-1">{detalheDoc.observacoes}</p></div>
+              )}
+              <div>
+                <h4 className="font-semibold mb-2">Produtos ({detalheDoc.produtos.length})</h4>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-secondary/30">
+                      <TableHead>Produto</TableHead>
+                      <TableHead>Localização</TableHead>
+                      <TableHead className="text-right">Qtd.</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {detalheDoc.produtos.map((pp, i) => {
+                      const prod = produtos.find((p) => p.id === pp.produtoId);
+                      return (
+                        <TableRow key={i}>
+                          <TableCell>{pp.produtoNome}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">{pp.localizacao || prod?.localizacao || "Não aplicável"}</TableCell>
+                          <TableCell className="text-right font-medium">{pp.quantidade}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog open={!!docEditar} onOpenChange={(o) => !o && setDocEditar(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar Documento de Devolução</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="ed-nome">Nome do Documento <span className="text-destructive">*</span></Label>
+                <Input id="ed-nome" value={editForm.nome} onChange={(e) => setEditForm((f) => ({ ...f, nome: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="ed-evento">Nome do Evento <span className="text-destructive">*</span></Label>
+                <Input id="ed-evento" value={editForm.nomeEvento} onChange={(e) => setEditForm((f) => ({ ...f, nomeEvento: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="ed-data">Data de Entrega <span className="text-destructive">*</span></Label>
+                <Input id="ed-data" type="date" value={editForm.dataEntrega} onChange={(e) => setEditForm((f) => ({ ...f, dataEntrega: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="ed-resp">Responsável <span className="text-destructive">*</span></Label>
+                <Input id="ed-resp" value={editForm.responsavel} onChange={(e) => setEditForm((f) => ({ ...f, responsavel: e.target.value }))} />
+              </div>
+              <div className="space-y-1 col-span-2">
+                <Label htmlFor="ed-loc">Localização <span className="text-destructive">*</span></Label>
+                <Select value={editForm.localizacao} onValueChange={(v) => setEditForm((f) => ({ ...f, localizacao: v }))}>
+                  <SelectTrigger id="ed-loc" className={cn(!editForm.localizacao && "border-destructive ring-1 ring-destructive")}>
+                    <SelectValue placeholder="Selecionar localização" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {localizacoes.map((l) => <SelectItem key={l.id} value={l.nome}>{l.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1 col-span-2">
+                <Label htmlFor="ed-obs">Observações</Label>
+                <Textarea id="ed-obs" rows={3} value={editForm.observacoes} onChange={(e) => setEditForm((f) => ({ ...f, observacoes: e.target.value }))} />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Nota: a edição não altera os produtos da devolução.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDocEditar(null)} disabled={savingEdit}>Cancelar</Button>
+            <Button onClick={handleSaveEdit} disabled={savingEdit}>{savingEdit ? "A guardar..." : "Guardar alterações"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!docEliminar} onOpenChange={(o) => { if (!o) { setDocEliminar(null); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar documento de devolução?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                Esta ação eliminará permanentemente o documento <strong>{docEliminar?.nome}</strong>.
+              </span>
+              <span className="block text-xs text-muted-foreground">Esta ação não pode ser revertida.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingDoc}>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deletingDoc}
+              onClick={(e) => { e.preventDefault(); handleDelete(); }}
+            >
+              {deletingDoc ? "A eliminar..." : "Eliminar definitivamente"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
