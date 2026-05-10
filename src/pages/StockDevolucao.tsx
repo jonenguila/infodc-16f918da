@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
-import { type ProdutoDevolucaoDoc } from "@/stores/stockStore";
+import { type ProdutoDevolucaoDoc, type DocumentoDevolucao } from "@/stores/stockStore";
 import {
-  RotateCcw, FileText, Search, Plus, Trash2, CalendarIcon,
+  RotateCcw, FileText, Search, Plus, Trash2, CalendarIcon, Pencil, Eye,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,10 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
@@ -26,6 +30,7 @@ import {
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { useStockStore } from "@/stores/stockStore";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 const StockDevolucao = () => {
