@@ -456,7 +456,7 @@ export function useStockStore() {
 
   const editarPedido = async (
     pedidoId: string,
-    updates: Partial<Pick<Pedido, "nomeRequisitante" | "email" | "dataPedido" | "tipoEvento" | "nomeEvento" | "responsavelLevantamento" | "prioridade" | "observacoes">>
+    updates: Partial<Pick<Pedido, "nomeRequisitante" | "email" | "dataPedido" | "tipoEvento" | "nomeEvento" | "responsavelLevantamento" | "prioridade" | "observacoes" | "localizacao">>
   ): Promise<string | null> => {
     const dbUpdates: Record<string, any> = {};
     if (updates.nomeRequisitante !== undefined) dbUpdates.nome_requisitante = updates.nomeRequisitante;
@@ -467,6 +467,7 @@ export function useStockStore() {
     if (updates.responsavelLevantamento !== undefined) dbUpdates.responsavel_levantamento = updates.responsavelLevantamento;
     if (updates.prioridade !== undefined) dbUpdates.prioridade = updates.prioridade;
     if (updates.observacoes !== undefined) dbUpdates.observacoes = updates.observacoes;
+    if (updates.localizacao !== undefined) dbUpdates.localizacao = updates.localizacao;
     const { error } = await supabase.from("stock_pedidos").update(dbUpdates).eq("id", pedidoId);
     if (error) return error.message;
     await fetchAll();
