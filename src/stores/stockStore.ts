@@ -584,6 +584,32 @@ export function useStockStore() {
     await fetchAll();
   };
 
+  const editarDocumentoDevolucao = async (
+    docId: string,
+    updates: Partial<Pick<DocumentoDevolucao, "nome" | "nomeEvento" | "dataEntrega" | "responsavel" | "localizacao" | "observacoes">>
+  ): Promise<string | null> => {
+    const dbUpdates: Record<string, any> = {};
+    if (updates.nome !== undefined) dbUpdates.nome = updates.nome;
+    if (updates.nomeEvento !== undefined) dbUpdates.nome_evento = updates.nomeEvento;
+    if (updates.dataEntrega !== undefined) dbUpdates.data_entrega = updates.dataEntrega;
+    if (updates.responsavel !== undefined) dbUpdates.responsavel = updates.responsavel;
+    if (updates.localizacao !== undefined) dbUpdates.localizacao = updates.localizacao;
+    if (updates.observacoes !== undefined) dbUpdates.observacoes = updates.observacoes;
+    const { error } = await supabase.from("stock_documentos_devolucao").update(dbUpdates).eq("id", docId);
+    if (error) return error.message;
+    await fetchAll();
+    return null;
+  };
+
+  const eliminarDocumentoDevolucao = async (docId: string): Promise<string | null> => {
+    const doc = _documentosDevolucao.find((d) => d.id === docId);
+    if (!doc) return "Documento não encontrado";
+    const { error } = await supabase.from("stock_documentos_devolucao").delete().eq("id", docId);
+    if (error) return error.message;
+    await fetchAll();
+    return null;
+  };
+
   return {
     produtos: _produtos,
     tipologias: _tipologias,
@@ -597,6 +623,7 @@ export function useStockStore() {
     getEstado, importarExcel, adicionarProduto, editarProduto, eliminarProduto, exportarTemplate, getNextPedidoNumber,
     criarPedido, atualizarEstadoPedido, editarPedido, eliminarPedido,
     criarLevantamento, registarDevolucao, registarDocumentoDevolucao,
+    editarDocumentoDevolucao, eliminarDocumentoDevolucao,
     adicionarTipologia, editarTipologia, eliminarTipologia,
     adicionarLocalizacao, editarLocalizacao, eliminarLocalizacao,
     DEFAULT_STOCK_MINIMO,

@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
-import { type ProdutoDevolucaoDoc } from "@/stores/stockStore";
+import { type ProdutoDevolucaoDoc, type DocumentoDevolucao } from "@/stores/stockStore";
 import {
-  RotateCcw, FileText, Search, Plus, Trash2, CalendarIcon,
+  RotateCcw, FileText, Search, Plus, Trash2, CalendarIcon, Pencil, Eye,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,10 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
@@ -26,11 +30,14 @@ import {
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { useStockStore } from "@/stores/stockStore";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 const StockDevolucao = () => {
-  const { produtos, localizacoes, documentosDevolucao, registarDocumentoDevolucao } = useStockStore();
+  const { produtos, localizacoes, documentosDevolucao, registarDocumentoDevolucao, editarDocumentoDevolucao, eliminarDocumentoDevolucao } = useStockStore();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdminOrGestor = user?.perfil === "Administrador" || user?.perfil === "Gestor";
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -46,9 +53,66 @@ const StockDevolucao = () => {
   const [produtosDevolucao, setProdutosDevolucao] = useState<ProdutoDevolucaoDoc[]>([]);
   const [tentouSubmeter, setTentouSubmeter] = useState(false);
 
+  // Edit state
+  const [docEditar, setDocEditar] = useState<DocumentoDevolucao | null>(null);
+  const [editForm, setEditForm] = useState({
+    nome: "",
+    nomeEvento: "",
+    dataEntrega: "",
+    responsavel: "",
+    localizacao: "",
+    observacoes: "",
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [docEliminar, setDocEliminar] = useState<DocumentoDevolucao | null>(null);
+  const [deletingDoc, setDeletingDoc] = useState(false);
+  const [detalheDoc, setDetalheDoc] = useState<DocumentoDevolucao | null>(null);
+
   const camposValidos = nome && nomeEvento && dataEntrega && responsavel && localizacao && produtosDevolucao.length > 0;
 
   const hasError = (condition: boolean) => tentouSubmeter && !condition;
+
+  const openEditar = (doc: DocumentoDevolucao) => {
+    setEditForm({
+      nome: doc.nome,
+      nomeEvento: doc.nomeEvento,
+      dataEntrega: doc.dataEntrega,
+      responsavel: doc.responsavel,
+      localizacao: doc.localizacao || "",
+      observacoes: doc.observacoes || "",
+    });
+    setDocEditar(doc);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!docEditar) return;
+    if (!editForm.nome.trim() || !editForm.nomeEvento.trim() || !editForm.dataEntrega || !editForm.responsavel.trim() || !editForm.localizacao) {
+      toast({ title: "Campos obrigatórios em falta", description: "Nome, Evento, Data, Responsável e Localização são obrigatórios.", variant: "destructive" });
+      return;
+    }
+    setSavingEdit(true);
+    const err = await editarDocumentoDevolucao(docEditar.id, editForm);
+    setSavingEdit(false);
+    if (err) {
+      toast({ title: "Erro ao guardar", description: err, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Documento atualizado com sucesso" });
+    setDocEditar(null);
+  };
+
+  const handleDelete = async () => {
+    if (!docEliminar) return;
+    setDeletingDoc(true);
+    const err = await eliminarDocumentoDevolucao(docEliminar.id);
+    setDeletingDoc(false);
+    if (err) {
+      toast({ title: "Erro ao eliminar", description: err, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Documento eliminado" });
+    setDocEliminar(null);
+  };
 
   const adicionarProduto = () => {
     const prod = produtos.find((p) => String(p.id) === produtoSelecionado);
@@ -172,12 +236,13 @@ const StockDevolucao = () => {
               <TableHead>Localização</TableHead>
               <TableHead>Total Un.</TableHead>
               <TableHead>Estado</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredDocs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
                   Sem documentos de devolução registados.
                 </TableCell>
               </TableRow>
@@ -206,6 +271,23 @@ const StockDevolucao = () => {
                 <TableCell className="font-semibold text-foreground">{doc.produtos.reduce((a, p) => a + p.quantidade, 0)}</TableCell>
                 <TableCell>
                   <Badge className="bg-green-100 text-green-700 border-0 text-[11px]">Registado</Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" title="Ver detalhes" onClick={() => setDetalheDoc(doc)}>
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    {isAdminOrGestor && (
+                      <>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar documento" onClick={() => openEditar(doc)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="Eliminar documento" onClick={() => setDocEliminar(doc)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             );})}
@@ -326,6 +408,129 @@ const StockDevolucao = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Detail dialog */}
+      <Dialog open={!!detalheDoc} onOpenChange={() => setDetalheDoc(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Documento</DialogTitle>
+          </DialogHeader>
+          {detalheDoc && (
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-muted-foreground">Nome:</span> <strong>{detalheDoc.nome}</strong></div>
+                <div><span className="text-muted-foreground">Evento:</span> <strong>{detalheDoc.nomeEvento}</strong></div>
+                <div><span className="text-muted-foreground">Data Entrega:</span> <strong>{detalheDoc.dataEntrega}</strong></div>
+                <div><span className="text-muted-foreground">Responsável:</span> <strong>{detalheDoc.responsavel}</strong></div>
+                <div><span className="text-muted-foreground">Localização:</span> <strong>{detalheDoc.localizacao || "Não aplicável"}</strong></div>
+              </div>
+              {detalheDoc.observacoes && (
+                <div><span className="text-muted-foreground">Observações:</span> <p className="mt-1">{detalheDoc.observacoes}</p></div>
+              )}
+              <div>
+                <h4 className="font-semibold mb-2">Produtos ({detalheDoc.produtos.length})</h4>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-secondary/30">
+                      <TableHead>Produto</TableHead>
+                      <TableHead>Localização</TableHead>
+                      <TableHead className="text-right">Qtd.</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {detalheDoc.produtos.map((pp, i) => {
+                      const prod = produtos.find((p) => p.id === pp.produtoId);
+                      return (
+                        <TableRow key={i}>
+                          <TableCell>{pp.produtoNome}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">{pp.localizacao || prod?.localizacao || "Não aplicável"}</TableCell>
+                          <TableCell className="text-right font-medium">{pp.quantidade}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog open={!!docEditar} onOpenChange={(o) => !o && setDocEditar(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar Documento de Devolução</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="ed-nome">Nome do Documento <span className="text-destructive">*</span></Label>
+                <Input id="ed-nome" value={editForm.nome} onChange={(e) => setEditForm((f) => ({ ...f, nome: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="ed-evento">Nome do Evento <span className="text-destructive">*</span></Label>
+                <Input id="ed-evento" value={editForm.nomeEvento} onChange={(e) => setEditForm((f) => ({ ...f, nomeEvento: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="ed-data">Data de Entrega <span className="text-destructive">*</span></Label>
+                <Input id="ed-data" type="date" value={editForm.dataEntrega} onChange={(e) => setEditForm((f) => ({ ...f, dataEntrega: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="ed-resp">Responsável <span className="text-destructive">*</span></Label>
+                <Input id="ed-resp" value={editForm.responsavel} onChange={(e) => setEditForm((f) => ({ ...f, responsavel: e.target.value }))} />
+              </div>
+              <div className="space-y-1 col-span-2">
+                <Label htmlFor="ed-loc">Localização <span className="text-destructive">*</span></Label>
+                <Select value={editForm.localizacao} onValueChange={(v) => setEditForm((f) => ({ ...f, localizacao: v }))}>
+                  <SelectTrigger id="ed-loc" className={cn(!editForm.localizacao && "border-destructive ring-1 ring-destructive")}>
+                    <SelectValue placeholder="Selecionar localização" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {localizacoes.map((l) => <SelectItem key={l.id} value={l.nome}>{l.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1 col-span-2">
+                <Label htmlFor="ed-obs">Observações</Label>
+                <Textarea id="ed-obs" rows={3} value={editForm.observacoes} onChange={(e) => setEditForm((f) => ({ ...f, observacoes: e.target.value }))} />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Nota: a edição não altera os produtos da devolução.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDocEditar(null)} disabled={savingEdit}>Cancelar</Button>
+            <Button onClick={handleSaveEdit} disabled={savingEdit}>{savingEdit ? "A guardar..." : "Guardar alterações"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!docEliminar} onOpenChange={(o) => { if (!o) { setDocEliminar(null); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar documento de devolução?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                Esta ação eliminará permanentemente o documento <strong>{docEliminar?.nome}</strong>.
+              </span>
+              <span className="block text-xs text-muted-foreground">Esta ação não pode ser revertida.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingDoc}>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deletingDoc}
+              onClick={(e) => { e.preventDefault(); handleDelete(); }}
+            >
+              {deletingDoc ? "A eliminar..." : "Eliminar definitivamente"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
