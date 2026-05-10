@@ -236,12 +236,13 @@ const StockDevolucao = () => {
               <TableHead>Localização</TableHead>
               <TableHead>Total Un.</TableHead>
               <TableHead>Estado</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredDocs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
                   Sem documentos de devolução registados.
                 </TableCell>
               </TableRow>
@@ -270,6 +271,23 @@ const StockDevolucao = () => {
                 <TableCell className="font-semibold text-foreground">{doc.produtos.reduce((a, p) => a + p.quantidade, 0)}</TableCell>
                 <TableCell>
                   <Badge className="bg-green-100 text-green-700 border-0 text-[11px]">Registado</Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" title="Ver detalhes" onClick={() => setDetalheDoc(doc)}>
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    {isAdminOrGestor && (
+                      <>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar documento" onClick={() => openEditar(doc)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="Eliminar documento" onClick={() => setDocEliminar(doc)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             );})}
