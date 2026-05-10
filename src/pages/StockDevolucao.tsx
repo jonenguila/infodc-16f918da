@@ -322,7 +322,7 @@ const StockDevolucao = () => {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSubmit}>Registar Devolução</Button>
+            <Button onClick={handleSubmit} disabled={!camposValidos}>Registar Devolução</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

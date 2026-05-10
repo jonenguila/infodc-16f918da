@@ -52,7 +52,7 @@ const prioridadeStyles: Record<string, string> = {
 const ITEMS_PER_PAGE = 10;
 
 const ListagemPedidos = () => {
-  const { pedidos, produtos, atualizarEstadoPedido, editarPedido, eliminarPedido } = useStockStore();
+  const { pedidos, produtos, localizacoes, atualizarEstadoPedido, editarPedido, eliminarPedido } = useStockStore();
   const { toast } = useToast();
   const { user } = useAuth();
   const isAdminOrGestor = user?.perfil === "Administrador" || user?.perfil === "Gestor";
@@ -74,6 +74,7 @@ const ListagemPedidos = () => {
     nomeEvento: "",
     responsavelLevantamento: "",
     prioridade: "Média" as Pedido["prioridade"],
+    localizacao: "",
     observacoes: "",
   });
   const [savingEdit, setSavingEdit] = useState(false);
@@ -89,6 +90,7 @@ const ListagemPedidos = () => {
       nomeEvento: p.nomeEvento || "",
       responsavelLevantamento: p.responsavelLevantamento || "",
       prioridade: p.prioridade,
+      localizacao: (p as any).localizacao || "",
       observacoes: p.observacoes || "",
     });
     setPedidoEditar(p);
@@ -96,8 +98,8 @@ const ListagemPedidos = () => {
 
   const handleSaveEdit = async () => {
     if (!pedidoEditar) return;
-    if (!editForm.nomeRequisitante.trim() || !editForm.email.trim() || !editForm.dataPedido) {
-      toast({ title: "Campos obrigatórios em falta", variant: "destructive" });
+    if (!editForm.nomeRequisitante.trim() || !editForm.email.trim() || !editForm.dataPedido || !editForm.localizacao) {
+      toast({ title: "Campos obrigatórios em falta", description: "Requisitante, Email, Data e Localização são obrigatórios.", variant: "destructive" });
       return;
     }
     setSavingEdit(true);
@@ -493,6 +495,17 @@ const ListagemPedidos = () => {
               <div className="space-y-1 col-span-2">
                 <Label htmlFor="ed-resp">Responsável pelo Levantamento</Label>
                 <Input id="ed-resp" value={editForm.responsavelLevantamento} onChange={(e) => setEditForm((f) => ({ ...f, responsavelLevantamento: e.target.value }))} />
+              </div>
+              <div className="space-y-1 col-span-2">
+                <Label htmlFor="ed-loc">Localização <span className="text-destructive">*</span></Label>
+                <Select value={editForm.localizacao} onValueChange={(v) => setEditForm((f) => ({ ...f, localizacao: v }))}>
+                  <SelectTrigger id="ed-loc" className={cn(!editForm.localizacao && "border-destructive ring-1 ring-destructive")}>
+                    <SelectValue placeholder="Selecionar localização" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {localizacoes.map((l) => <SelectItem key={l.id} value={l.nome}>{l.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1 col-span-2">
                 <Label htmlFor="ed-obs">Observações</Label>
