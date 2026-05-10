@@ -341,7 +341,7 @@ const NovoPedido = () => {
 
       <div className="flex justify-end gap-3 mt-6">
         <Button variant="outline" onClick={limpar} className="gap-2"><X className="w-4 h-4" /> Cancelar</Button>
-        <Button onClick={handleSubmit} className="gap-2"><Send className="w-4 h-4" /> Criar Pedido</Button>
+        <Button onClick={handleSubmit} disabled={!camposValidos} className="gap-2"><Send className="w-4 h-4" /> Criar Pedido</Button>
       </div>
     </div>
   );
