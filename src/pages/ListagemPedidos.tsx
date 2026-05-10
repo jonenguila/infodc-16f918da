@@ -497,6 +497,17 @@ const ListagemPedidos = () => {
                 <Input id="ed-resp" value={editForm.responsavelLevantamento} onChange={(e) => setEditForm((f) => ({ ...f, responsavelLevantamento: e.target.value }))} />
               </div>
               <div className="space-y-1 col-span-2">
+                <Label htmlFor="ed-loc">Localização <span className="text-destructive">*</span></Label>
+                <Select value={editForm.localizacao} onValueChange={(v) => setEditForm((f) => ({ ...f, localizacao: v }))}>
+                  <SelectTrigger id="ed-loc" className={cn(!editForm.localizacao && "border-destructive ring-1 ring-destructive")}>
+                    <SelectValue placeholder="Selecionar localização" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {localizacoes.map((l) => <SelectItem key={l.id} value={l.nome}>{l.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1 col-span-2">
                 <Label htmlFor="ed-obs">Observações</Label>
                 <Textarea id="ed-obs" rows={3} value={editForm.observacoes} onChange={(e) => setEditForm((f) => ({ ...f, observacoes: e.target.value }))} />
               </div>
