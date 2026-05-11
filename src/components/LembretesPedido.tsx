@@ -72,8 +72,32 @@ export const LembretesPedido = () => {
 
   const handleSave = async () => {
     const invalid = editing.some((l) => !l.texto.trim());
-    if (invalid) {
-      toast({ title: "Texto obrigatório", description: "Todos os lembretes devem ter texto.", variant: "destructive" });
+  const isValidUrl = (value: string) => {
+    try {
+      const u = new URL(value);
+      return u.protocol === "http:" || u.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
+
+  const validateAll = (): string | null => {
+    for (let i = 0; i < editing.length; i++) {
+      const l = editing[i];
+      if (!l.texto.trim()) return `Lembrete #${i + 1}: o texto é obrigatório.`;
+      const url = l.link_url.trim();
+      const label = l.link_label.trim();
+      if (url && !isValidUrl(url)) return `Lembrete #${i + 1}: a URL deve começar por http:// ou https:// e ser válida.`;
+      if (label && !url) return `Lembrete #${i + 1}: o texto do link só pode existir quando há uma URL.`;
+      if (url && !label) return `Lembrete #${i + 1}: indique também o texto do link.`;
+    }
+    return null;
+  };
+
+  const handleSave = async () => {
+    const err = validateAll();
+    if (err) {
+      toast({ title: "Validação falhou", description: err, variant: "destructive" });
       return;
     }
     setSaving(true);
