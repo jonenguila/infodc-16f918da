@@ -70,8 +70,6 @@ export const LembretesPedido = () => {
     ]);
   };
 
-  const handleSave = async () => {
-    const invalid = editing.some((l) => !l.texto.trim());
   const isValidUrl = (value: string) => {
     try {
       const u = new URL(value);
