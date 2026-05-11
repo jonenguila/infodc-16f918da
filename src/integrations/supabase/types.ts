@@ -104,6 +104,36 @@ export type Database = {
         }
         Relationships: []
       }
+      lembretes_pedido: {
+        Row: {
+          created_at: string
+          id: string
+          link_label: string
+          link_url: string
+          ordem: number
+          texto: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link_label?: string
+          link_url?: string
+          ordem?: number
+          texto: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link_label?: string
+          link_url?: string
+          ordem?: number
+          texto?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notificacoes: {
         Row: {
           created_at: string
