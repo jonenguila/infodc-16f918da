@@ -59,7 +59,10 @@ import { useStockStore } from "@/stores/stockStore";
 
 async function getStore() {
   const { result } = renderHook(() => useStockStore());
-  await waitFor(() => expect(result.current.loading).toBe(false));
+  for (let i = 0; i < 50 && result.current.loading; i++) {
+    await new Promise((r) => setTimeout(r, 10));
+  }
+  expect(result.current.loading).toBe(false);
   return result;
 }
 
