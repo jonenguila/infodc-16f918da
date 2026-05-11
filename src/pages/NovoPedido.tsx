@@ -311,31 +311,7 @@ const NovoPedido = () => {
 
         {/* Lembretes */}
         <div className="lg:col-span-1">
-          <div className="bg-card rounded-xl border border-border p-6 sticky top-8 space-y-5">
-            <h2 className="text-base font-semibold text-foreground">Lembretes Importantes:</h2>
-            <ul className="space-y-3 text-sm text-muted-foreground">
-              <li className="flex gap-2 leading-relaxed"><span className="text-primary mt-0.5">•</span>Verificar stock com antecedência.</li>
-              <li className="flex gap-2 leading-relaxed"><span className="text-primary mt-0.5">•</span>Vigiar os materiais e brindes durante o evento.</li>
-              <li className="flex gap-2 leading-relaxed"><span className="text-primary mt-0.5">•</span>Privilegiar oferta a quem segue o Data CoLAB nas redes sociais.</li>
-              <li className="flex gap-2 leading-relaxed"><span className="text-primary mt-0.5">•</span>O levantamento é feito na delegação de Viana do Castelo. Caso não consiga levantar, arranjar um colaborador que levante por si.</li>
-              <li className="flex gap-2 leading-relaxed"><span className="text-primary mt-0.5">•</span>Contabilizar e devolver os brindes após o evento. Deve ser preenchido o campo "Devolução" no +InfoDataCoLAB, depois do ato da entrega na delegação de Viana do Castelo ao cuidado do colaborador Jorge Rodrigues.</li>
-              <li className="flex gap-2 leading-relaxed"><span className="text-primary mt-0.5">•</span>Caso existam brindes não utilizados, estes devem ser devolvidos e registados.</li>
-              <li className="flex gap-2 leading-relaxed">
-                <span className="text-primary mt-0.5">•</span>
-                <span>
-                  Não te esqueças de registar a tua ida ao evento no formulário:{" "}
-                  <a
-                    href="https://forms.office.com/Pages/ResponsePage.aspx?id=WjgSWLKyyEaD2WOOg1g5qNFSEvuXwzROiN58fyl-yUdUMEw2VVExNFRIUDRFM1RRVEM5SFYxUU1KNS4u"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline inline-flex items-center gap-1 hover:text-primary/80"
-                  >
-                    Requerimentos de Pedidos de Comunicação <ExternalLink className="w-3 h-3" />
-                  </a>
-                </span>
-              </li>
-            </ul>
-          </div>
+          <LembretesPedido />
         </div>
       </div>
 
