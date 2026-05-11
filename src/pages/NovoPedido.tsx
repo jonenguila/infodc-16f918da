@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useStockStore } from "@/stores/stockStore";
 import { supabase } from "@/integrations/supabase/client";
+import { LembretesPedido } from "@/components/LembretesPedido";
 
 const tiposEvento = ["Conferência", "Workshop", "Feira", "Formação", "Evento Social", "Reunião Institucional", "Outro"];
 const prioridades: Array<"Baixa" | "Média" | "Alta" | "Urgente"> = ["Baixa", "Média", "Alta", "Urgente"];
